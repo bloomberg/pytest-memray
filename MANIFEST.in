@@ -1,0 +1,25 @@
+exclude CONTRIBUTING.md
+exclude Dockerfile
+exclude Jenkinsfile
+exclude requirements-*.txt
+exclude tox.ini
+
+recursive-exclude docs *
+recursive-exclude tests *
+recursive-exclude news *
+
+include README.md
+include Makefile
+include pyproject.toml
+include .bumpversion.cfg
+include .babelrc
+include webpack.config.js
+include NEWS.rst
+include .flake8
+
+recursive-include src/pytest_memray *.pxd
+recursive-include src/pytest_memray *.py
+recursive-include src/pytest_memray *.html *.js *.css
+recursive-include src/pytest_memray *.pyx *.pxd
+recursive-include src/pytest_memray/_memray *
+recursive-include tools *.sh
