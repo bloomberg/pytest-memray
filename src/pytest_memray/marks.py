@@ -1,9 +1,12 @@
-from .utils import parse_memory_string
-from .utils import sizeof_fmt
+from dataclasses import dataclass
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 from memray import AllocationRecord
-from typing import List, Optional, Tuple
-from dataclasses import dataclass
+
+from .utils import parse_memory_string
+from .utils import sizeof_fmt
 
 PytestSection = Tuple[str, str]
 

@@ -98,10 +98,7 @@ def test_limit_memory_marker_doesn_not_work_if_memray_inactive(testdir):
 
 @pytest.mark.parametrize(
     "memlimit, mem_to_alloc",
-    [
-        (5, 100),
-        (10, 200)
-    ],
+    [(5, 100), (10, 200)],
 )
 def test_memray_with_junit_xml_error_msg(testdir, memlimit, mem_to_alloc):
     xml_output_file = testdir.makefile(".xml", "")
