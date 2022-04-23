@@ -139,6 +139,7 @@ class Manager:
             )
             if result:
                 report.outcome = "failed"
+                report.longrepr = f"Memray detected problems with test {item.nodeid}"
                 report.sections.append(result)
                 outcome.force_result(report)
         return None

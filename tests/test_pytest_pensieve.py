@@ -95,6 +95,26 @@ def test_limit_memory_marker_doesn_not_work_if_memray_inactive(testdir):
     assert result.ret == ExitCode.OK
 
 
+def test_memray_with_junit_xml(testdir):
+    testdir.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        @pytest.mark.limit_memory("1B")
+        def test_memory_alloc_fails():
+            allocator.valloc(1234)
+            allocator.free()
+    """
+    )
+
+    result = testdir.runpytest(
+        "--memray", "--junit-xml", str(testdir.tmpdir / "blech.xml")
+    )
+    assert result.ret == ExitCode.TESTS_FAILED
+
+
 def test_memray_report(testdir):
     testdir.makepyfile(
         """
@@ -128,12 +148,12 @@ def test_memray_report(testdir):
 
     assert "results for test_memray_report.py::test_foo" in output
     assert "Total memory allocated: 2.0KiB" in output
-    assert "valloc:src/memray/_memray.pyx" in output
+    assert "valloc:src/memray/_memray_test_utils.pyx" in output
     assert "-> 2.0KiB" in output
 
     assert "results for test_memray_report.py::test_bar" in output
     assert "Total memory allocated: 1.0KiB" in output
-    assert "valloc:src/memray/_memray.pyx" in output
+    assert "valloc:src/memray/_memray_test_utils.pyx" in output
     assert "-> 1.0KiB" in output
 
 
