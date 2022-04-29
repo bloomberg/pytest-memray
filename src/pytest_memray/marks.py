@@ -22,7 +22,6 @@ class FailedTestMemoryInfo:
 
     def as_section(self) -> PytestSection:
         """Return a tuple in the format expected by section reporters."""
-        text_lines = []
         total_memory_str = sizeof_fmt(self.total_allocated_memory)
         max_memory_str = sizeof_fmt(self.max_memory)
         text_lines = [
