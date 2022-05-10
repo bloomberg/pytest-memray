@@ -1,8 +1,4 @@
-<p align="center">
-<img src="https://raw.githubusercontent.com/bloomberg/pytest-memray/main/docs/_static/images/logo.png" width="70%">
-</p>
-
-
+<img src="https://raw.githubusercontent.com/bloomberg/pytest-memray/main/docs/_static/images/logo.png" width="70%" style="display: block; margin: 0 auto"  alt="logo"/>
 
 # pytest-memray
 
@@ -12,8 +8,6 @@
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/pytest-memray)
 [![Tests](https://github.com/bloomberg/pytest-memray/actions/workflows/build.yml/badge.svg)](https://github.com/bloomberg/pytest-memray/actions/workflows/build.yml)
 ![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)
-
-
 
 pytest-memray is a pytest plugin for easy integration of `memray`.
 
@@ -29,7 +23,8 @@ packaging tools. We recommend installing the latest stable release from
 
 # Documentation
 
-You can find the latest documentation available [here](https://bloomberg.github.io/pytest-memray/).
+You can find the latest documentation available
+[here](https://bloomberg.github.io/pytest-memray/).
 
 # Usage
 
@@ -68,10 +63,12 @@ Allocations results for tests/test_package.py::some_test_that_allocates
 
 ## Configuration
 
-This plugin provides a clean minimal set of command line options that are added to pytest.
+This plugin provides a clean minimal set of command line options that are added to
+pytest.
 
 - `--memray`: Activate memray tracking.
-- `--most-allocations=MOST_ALLOCATIONS`: Show the N tests that allocate most memory (N=0 for all).
+- `--most-allocations=MOST_ALLOCATIONS`: Show the N tests that allocate most memory (N=0
+  for all).
 - `--hide-memray-summary`: Hide the memray summary at the end of the execution.
 
 ## Markers
@@ -80,13 +77,12 @@ There are some builtin markers and fixtures in `pytest-memray`:
 
 ### `limit_memory`
 
-When this marker is applied to a test, it will cause the test to fail if the
-execution of the test allocates more memory than allowed. It takes a single
-argument with a string indicating the maximum memory that the test can
-allocate.
+When this marker is applied to a test, it will cause the test to fail if the execution
+of the test allocates more memory than allowed. It takes a single argument with a string
+indicating the maximum memory that the test can allocate.
 
-The format for the string is `<NUMBER> ([KMGTP]B|B)`. The marker will raise
-ValueError if the string format cannot be parsed correctly.
+The format for the string is `<NUMBER> ([KMGTP]B|B)`. The marker will raise ValueError
+if the string format cannot be parsed correctly.
 
 Example of usage:
 
@@ -104,37 +100,48 @@ pytest-memray is Apache-2.0 licensed, as found in the [LICENSE](LICENSE) file.
 
 - [Code of Conduct](https://github.com/bloomberg/.github/blob/main/CODE_OF_CONDUCT.md)
 
-This project has adopted a Code of Conduct. If you have any concerns about the Code, or behavior which you have experienced in the project, please contact us at opensource@bloomberg.net.
+This project has adopted a Code of Conduct. If you have any concerns about the Code, or
+behavior which you have experienced in the project, please contact us at
+opensource@bloomberg.net.
 
 # Security Policy
 
 - [Security Policy](https://github.com/bloomberg/pytest-memray/security/policy)
 
-If you believe you have identified a security vulnerability in this project, please send email to the project team at opensource@bloomberg.net, detailing the suspected issue and any methods you've found to reproduce it.
+If you believe you have identified a security vulnerability in this project, please send
+email to the project team at opensource@bloomberg.net, detailing the suspected issue and
+any methods you've found to reproduce it.
 
-Please do NOT open an issue in the GitHub repository, as we'd prefer to keep vulnerability reports private until we've had an opportunity to review and address them.
+Please do NOT open an issue in the GitHub repository, as we'd prefer to keep
+vulnerability reports private until we've had an opportunity to review and address them.
 
 # Contributing
 
 We welcome your contributions to help us improve and extend this project!
 
-Below you will find some basic steps required to be able to contribute to the project. If you have any questions about this process or any other aspect of contributing to a Bloomberg open source project, feel free to send an email to opensource@bloomberg.net and we'll get your questions answered as quickly as we can.
+Below you will find some basic steps required to be able to contribute to the project.
+If you have any questions about this process or any other aspect of contributing to a
+Bloomberg open source project, feel free to email opensource@bloomberg.net, and we'll
+get your questions answered as quickly as we can.
 
 ## Contribution Licensing
 
-Since this project is distributed under the terms of an [open source license](LICENSE), contributions that you make
-are licensed under the same terms. In order for us to be able to accept your contributions,
-we will need explicit confirmation from you that you are able and willing to provide them under
-these terms, and the mechanism we use to do this is called a Developer's Certificate of Origin
-[(DCO)](https://github.com/bloomberg/.github/blob/main/DCO.md). This is very similar to the process used by the Linux(R) kernel, Samba, and many
-other major open source projects.
+Since this project is distributed under the terms of an [open source license](LICENSE),
+contributions that you make are licensed under the same terms. In order for us to be
+able to accept your contributions, we will need explicit confirmation from you that you
+are able and willing to provide them under these terms, and the mechanism we use to do
+this is called a Developer's Certificate of Origin
+[(DCO)](https://github.com/bloomberg/.github/blob/main/DCO.md). This is very similar to
+the process used by the Linux(R) kernel, Samba, and many other major open source
+projects.
 
-To participate under these terms, all that you must do is include a line like the following as the
-last line of the commit message for each commit in your contribution:
+To participate under these terms, all that you must do is include a line like the
+following as the last line of the commit message for each commit in your contribution:
 
     Signed-Off-By: Random J. Developer <random@developer.example.org>
 
-The simplest way to accomplish this is to add `-s` or `--signoff` to your `git commit` command.
+The simplest way to accomplish this is to add `-s` or `--signoff` to your `git commit`
+command.
 
 You must use your real name (sorry, no pseudonyms, and no anonymous contributions).
 
@@ -143,4 +150,15 @@ You must use your real name (sorry, no pseudonyms, and no anonymous contribution
 - Create an Issue, selecting 'Feature Request', and explain the proposed change.
 - Follow the guidelines in the issue template presented to you.
 - Submit the Issue.
-- Submit a Pull Request and link it to the Issue by including "#<issue number>" in the Pull Request summary.
+- Submit a Pull Request and link it to the Issue by including "#<issue number>" in the
+  Pull Request summary.
+
+## Development
+
+The project requires a Linux OS to work. To set up a DEV environment use tox (or
+directly the make targets). You can use Docker to run the test suite on non Linux as in
+(you can parametrize tox by passing additional arguments at the end):
+
+```console
+docker-compose run --rm test tox
+```

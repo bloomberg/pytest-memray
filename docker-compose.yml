@@ -1,0 +1,8 @@
+version: "3.9"
+services:
+  test:
+    image: "registry.gitlab.com/python-devs/ci-images:active"
+    volumes:
+      - .:/w:z
+    working_dir: /w
+    command: ["tox"]

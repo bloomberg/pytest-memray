@@ -7,12 +7,7 @@ import tempfile
 import uuid
 from dataclasses import dataclass
 from itertools import islice
-from typing import Dict
-from typing import Generator
-from typing import Iterable
-from typing import List
-from typing import Optional
-from typing import Tuple
+from typing import Dict, Generator, Iterable, List, Optional, Tuple
 
 import pytest
 from _pytest.config import Config
@@ -20,12 +15,8 @@ from _pytest.config.argparsing import Parser
 from _pytest.reports import TestReport
 from _pytest.runner import CallInfo
 from _pytest.terminal import TerminalReporter
-from memray import FileReader
-from memray import Metadata
-from memray import Tracker
-from pytest import ExitCode
-from pytest import Function
-from pytest import Item
+from memray import FileReader, Metadata, Tracker
+from pytest import ExitCode, Function, Item
 
 from .marks import limit_memory
 from .utils import sizeof_fmt

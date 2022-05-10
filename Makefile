@@ -10,7 +10,7 @@ PIP_INSTALL=PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(PYTHON) -m pip install
 
 markdown_files := $(shell find . -name \*.md -not -path '*/\.*')
 python_files := $(shell find . -name \*.py -not -path '*/\.*')
-
+PURELIB=$(shell $(PYTHON) -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
 # Use this to inject arbitrary commands before the make targets (e.g. docker)
 ENV :=
 
@@ -32,10 +32,10 @@ check:
 
 .PHONY: coverage
 coverage:  ## Run the test suite, with Python code coverage
-	$(PYTHON) -m coverage run \
-		--source=src/pytest_memray \
-		--module pytest tests
-	$(PYTHON) -m coverage report --show-missing --fail-under=89
+	COV_CORE_CONFIG=pyproject.toml COV_SOURCE=$(PURELIB)/pytest_memray COV_CORE_DATAFILE=.coverage.eager \
+	  $(PYTHON) -m pytest --cov $(PURELIB)/pytest_memray --cov tests --cov-append\
+      --cov-config=pyproject.toml --no-cov-on-fail --cov-report term-missing:skip-covered --cov-context=test \
+      --cov-report html:.pytest_cov/htmlcov tests
 
 .PHONY: format
 format:  ## Autoformat all files
@@ -46,19 +46,12 @@ format:  ## Autoformat all files
 lint:  ## Lint all files
 	$(PYTHON) -m isort --check $(python_files)
 	$(PYTHON) -m flake8 $(python_files)
-	$(PYTHON) -m black --check $(python_files)
+	$(PYTHON) -m black --check --diff $(python_files)
 	# $(PYTHON) -m mypy src/pytest_memray --ignore-missing-imports
-	$(PYTHON) -m check_manifest
 
 .PHONY: docs
 docs:  ## Generate documentation
-	$(MAKE) -C docs clean
-	$(MAKE) -C docs html
-
-.PHONY: docs-live
-docs-live:  ## Serve documentation on localhost:8000, with live-reload
-	$(MAKE) -C docs clean
-	$(MAKE) -C docs livehtml
+	sphinx-build docs docs/_build/html --color -W --keep-going -n -bhtml
 
 .PHONY: gh-pages
 gh-pages:  ## Publish documentation on BBGitHub Pages
@@ -77,19 +70,6 @@ clean:  ## Clean any built/generated artifacts
 	find . | grep -E '(\.o|\.so|\.gcda|\.gcno|\.gcov\.json\.gz)' | xargs rm -rf
 	find . | grep -E '(__pycache__|\.pyc|\.pyo)' | xargs rm -rf
 
-.PHONY: bump_version
-bump_version:
-	bump2version $(RELEASE)
-	$(eval NEW_VERSION := $(shell bump2version \
-	                                --allow-dirty \
-	                                --dry-run \
-	                                --list $(RELEASE) \
-	                                | tail -1 \
-	                                | sed s,"^.*=",,))
-	./tools/bump_changelog.sh $(NEW_VERSION)
-	git add debian/changelog
-	git commit --amend --no-edit
-
 .PHONY: gen_news
 gen_news:
 	$(eval CURRENT_VERSION := $(shell bump2version \
@@ -99,18 +79,6 @@ gen_news:
 	                            | grep current_version \
 	                            | sed s,"^.*=",,))
 	$(PYEXEC) towncrier --version $(CURRENT_VERSION) --name pytest_memray
-
-.PHONY: release-patch
-release-patch: RELEASE=patch
-release-patch: bump_version gen_news  ## Prepare patch version release
-
-.PHONY: release-minor
-release-minor: RELEASE=minor
-release-minor: bump_version gen_news  ## Prepare minor version release
-
-.PHONY: release-major
-release-major: RELEASE=major
-release-major: bump_version gen_news ## Prepare major version release
 
 .PHONY: help
 help:  ## Print this message
