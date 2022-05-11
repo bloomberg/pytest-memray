@@ -1,4 +1,5 @@
-from .utils import parse_memory_string, sizeof_fmt
+from .utils import parse_memory_string
+from .utils import sizeof_fmt
 
 
 def limit_memory(limit, *, _allocations):
