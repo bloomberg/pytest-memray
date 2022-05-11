@@ -5,9 +5,9 @@ from typing import Union
 def sizeof_fmt(num: Union[int, float], suffix: str = "B") -> str:
     for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
         if abs(num) < 1024.0:
-            return "%3.1f%s%s" % (num, unit, suffix)
+            return f"{num:3.1f}{unit}{suffix}"
         num /= 1024.0
-    return "%.1f%s%s" % (num, "Yi", suffix)
+    return f"{num:.1f}{'Yi'}{suffix}"
 
 
 UNIT_REGEXP = re.compile(
