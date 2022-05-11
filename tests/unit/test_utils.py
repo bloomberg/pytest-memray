@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from pytest_memray.utils import parse_memory_string
@@ -28,7 +30,7 @@ from pytest_memray.utils import parse_memory_string
         ("+100 Kb", 100 * 1024),
     ],
 )
-def test_parse_memory_string(the_str, expected):
+def test_parse_memory_string(the_str: str, expected: float) -> None:
     assert parse_memory_string(the_str) == expected
 
 
@@ -47,6 +49,6 @@ def test_parse_memory_string(the_str, expected):
         "+100.0 K",
     ],
 )
-def test_parse_incorrect_memory_string(the_str):
+def test_parse_incorrect_memory_string(the_str: str) -> None:
     with pytest.raises(ValueError):
         parse_memory_string(the_str)
