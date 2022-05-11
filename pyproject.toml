@@ -19,7 +19,7 @@ maintainers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-  "pytest>=3.5",
+  "pytest>=7",
   "memray>=1",
 ]
 optional-dependencies.docs = [

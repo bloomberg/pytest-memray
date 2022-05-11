@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import collections
 import functools
 import inspect
@@ -14,18 +16,18 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
-import pytest
-from _pytest.config import Config
-from _pytest.config.argparsing import Parser
-from _pytest.reports import TestReport
-from _pytest.runner import CallInfo
 from _pytest.terminal import TerminalReporter
 from memray import FileReader
 from memray import Metadata
 from memray import Tracker
+from pytest import CallInfo
+from pytest import Config
 from pytest import ExitCode
 from pytest import Function
 from pytest import Item
+from pytest import Parser
+from pytest import TestReport
+from pytest import hookimpl
 
 from .marks import limit_memory
 from .utils import sizeof_fmt
@@ -80,12 +82,12 @@ class Manager:
         self.config = config
         self.result_path = tempfile.TemporaryDirectory()
 
-    @pytest.hookimpl(hookwrapper=True)
+    @hookimpl(hookwrapper=True)
     def pytest_unconfigure(self, config: Config) -> Generator[None, None, None]:
         yield
         self.result_path.cleanup()
 
-    @pytest.hookimpl(hookwrapper=True)
+    @hookimpl(hookwrapper=True)
     def pytest_pyfunc_call(self, pyfuncitem: Function) -> Optional[object]:
         testfunction = pyfuncitem.obj
 
@@ -107,7 +109,7 @@ class Manager:
 
         yield
 
-    @pytest.hookimpl(hookwrapper=True)
+    @hookimpl(hookwrapper=True)
     def pytest_runtest_makereport(
         self, item: Item, call: CallInfo
     ) -> Generator[None, Optional[TestReport], Optional[TestReport]]:
@@ -144,7 +146,7 @@ class Manager:
                 outcome.force_result(report)
         return None
 
-    @pytest.hookimpl(hookwrapper=True, trylast=True)
+    @hookimpl(hookwrapper=True, trylast=True)
     def pytest_report_teststatus(self, report):
         outcome = yield
 
@@ -154,7 +156,7 @@ class Manager:
         if any("memray" in section for section, _ in report.sections):
             outcome.force_result(("failed", "M", "MEMORY PROBLEMS"))
 
-    @pytest.hookimpl
+    @hookimpl
     def pytest_terminal_summary(
         self, terminalreporter: TerminalReporter, exitstatus: ExitCode
     ) -> None:
