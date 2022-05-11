@@ -9,11 +9,9 @@ import tempfile
 import uuid
 from dataclasses import dataclass
 from itertools import islice
-from typing import Dict
 from typing import Generator
 from typing import Iterable
 from typing import List
-from typing import Optional
 from typing import Tuple
 
 from _pytest.terminal import TerminalReporter
@@ -40,7 +38,7 @@ N_HISTOGRAM_BINS = 5
 
 def histogram(
     iterable: Iterable[float], low: float, high: float, bins: int
-) -> List[int]:
+) -> list[int]:
     """Count elements from the iterable into evenly spaced bins
 
     >>> scores = [82, 85, 90, 91, 70, 87, 45]
@@ -78,7 +76,7 @@ class Result:
 
 class Manager:
     def __init__(self, config) -> None:
-        self.results: Dict[str, Result] = {}
+        self.results: dict[str, Result] = {}
         self.config = config
         self.result_path = tempfile.TemporaryDirectory()
 
@@ -88,7 +86,7 @@ class Manager:
         self.result_path.cleanup()
 
     @hookimpl(hookwrapper=True)
-    def pytest_pyfunc_call(self, pyfuncitem: Function) -> Optional[object]:
+    def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
         testfunction = pyfuncitem.obj
 
         @functools.wraps(testfunction)
@@ -112,7 +110,7 @@ class Manager:
     @hookimpl(hookwrapper=True)
     def pytest_runtest_makereport(
         self, item: Item, call: CallInfo
-    ) -> Generator[None, Optional[TestReport], Optional[TestReport]]:
+    ) -> Generator[None, TestReport | None, TestReport | None]:
         outcome = yield
 
         if call.when != "call":
