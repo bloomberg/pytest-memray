@@ -38,7 +38,7 @@ optional-dependencies.lint = [
 optional-dependencies.test = [
   "covdefaults>=2.2",
   "pytest>=7",
-  "pytest-cov>=3"
+  "coverage>=6.3"
 ]
 dynamic = ["version"]
 classifiers = [
@@ -66,6 +66,11 @@ build.targets.sdist.include = ["/Makefile", "/tox.ini", "NEWS.rst", "/src", "/te
 line-length = 88
 
 [tool.coverage]
+run.dynamic_context = "test_function"
+run.source = ["pytest_memray", "tests"]
+run.plugins = ["covdefaults"]
+run.parallel = true
+report.fail_under = 96
 html.show_contexts = true
 html.skip_covered = false
 paths.source = [
@@ -76,10 +81,6 @@ paths.source = [
   "*/src",
   "*\\src",
 ]
-report.fail_under = 78
-report.omit = []
-run.parallel = true
-run.plugins = ["covdefaults"]
 
 [tool.mypy]
 python_version = "3.8"

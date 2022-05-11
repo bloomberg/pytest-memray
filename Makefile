@@ -32,10 +32,11 @@ check:
 
 .PHONY: coverage
 coverage:  ## Run the test suite, with Python code coverage
-	COV_CORE_CONFIG=pyproject.toml COV_SOURCE=$(PURELIB)/pytest_memray COV_CORE_DATAFILE=.coverage.eager \
-	  $(PYTHON) -m pytest --cov $(PURELIB)/pytest_memray --cov tests --cov-append\
-      --cov-config=pyproject.toml --no-cov-on-fail --cov-report term-missing:skip-covered --cov-context=test \
-      --cov-report html:.pytest_cov/htmlcov tests
+	$(PYTHON) -m coverage erase
+	$(PYTHON) -m coverage run -m pytest tests
+	$(PYTHON) -m coverage combine
+	$(PYTHON) -m coverage report
+	$(PYTHON) -m coverage html -d .pytest_cov/htmlcov
 
 .PHONY: format
 format:  ## Autoformat all files
