@@ -13,6 +13,7 @@ from typing import Generator
 from typing import Iterable
 from typing import List
 from typing import Tuple
+from typing import cast
 
 from _pytest.terminal import TerminalReporter
 from memray import FileReader
@@ -91,9 +92,8 @@ class Manager:
 
         @functools.wraps(testfunction)
         def wrapper(*args, **kwargs):
-            result_file = (
-                pathlib.Path(self.result_path.name) / f"{uuid.uuid4().hex}.bin"
-            )
+            name = f"{uuid.uuid4().hex}.bin"
+            result_file = pathlib.Path(self.result_path.name) / name
             with Tracker(result_file):
                 result = testfunction(*args, **kwargs)
             try:
@@ -112,15 +112,10 @@ class Manager:
         self, item: Item, call: CallInfo
     ) -> Generator[None, TestReport | None, TestReport | None]:
         outcome = yield
-
-        if call.when != "call":
-            return None
-
-        if outcome is None:
+        if call.when != "call" or outcome is None:
             return None
 
         report = outcome.get_result()
-
         if report.when != "call" or report.outcome != "passed":
             return None
 
@@ -132,11 +127,8 @@ class Manager:
             if not result:
                 continue
             reader = FileReader(result.result_file)
-            result = marker_fn(
-                *marker.args,
-                **marker.kwargs,
-                _allocations=list(reader.get_high_watermark_allocation_records()),
-            )
+            allocations = list(reader.get_high_watermark_allocation_records())
+            result = marker_fn(*marker.args, **marker.kwargs, _allocations=allocations)
             if result:
                 report.outcome = "failed"
                 report.longrepr = f"Memray detected problems with test {item.nodeid}"
@@ -147,7 +139,6 @@ class Manager:
     @hookimpl(hookwrapper=True, trylast=True)
     def pytest_report_teststatus(self, report):
         outcome = yield
-
         if report.when != "call" or report.outcome != "failed":
             return None
 
@@ -158,9 +149,7 @@ class Manager:
     def pytest_terminal_summary(
         self, terminalreporter: TerminalReporter, exitstatus: ExitCode
     ) -> None:
-        if self.config.getvalue("hide_memray_summary") or self.config.getini(
-            "hide_memray_summary"
-        ):
+        if value_or_ini(self.config, "hide_memray_summary"):
             return
 
         terminalreporter.write_line("")
@@ -174,9 +163,7 @@ class Manager:
             }
         )
 
-        max_results = self.config.getini("most_allocations") or self.config.getvalue(
-            "most_allocations"
-        )
+        max_results = cast(int, value_or_ini(self.config, "most_allocations"))
 
         for test_id, total_size in total_sizes.most_common(max_results):
             result = self.results[test_id]
@@ -198,32 +185,23 @@ class Manager:
         metadata: Metadata,
         terminalreporter: TerminalReporter,
     ) -> None:
-        terminalreporter.write_line(f"Allocations results for {test_id}")
-        terminalreporter.write_line("")
-        terminalreporter.write_line(
-            f"\t 📦 Total memory allocated: {sizeof_fmt(metadata.peak_memory)}"
-        )
-        terminalreporter.write_line(
-            f"\t 📏 Total allocations: {metadata.total_allocations}"
-        )
+        writeln = terminalreporter.write_line
+        writeln(f"Allocations results for {test_id}")
+        writeln("")
+        writeln(f"\t 📦 Total memory allocated: {sizeof_fmt(metadata.peak_memory)}")
+        writeln(f"\t 📏 Total allocations: {metadata.total_allocations}")
         sizes = [allocation.size for allocation in records]
         histogram_txt = cli_hist(sizes, bins=min(len(sizes), N_HISTOGRAM_BINS))
-        terminalreporter.write_line(
-            f"\t 📊 Histogram of allocation sizes: |{histogram_txt}|"
-        )
-        terminalreporter.write_line("\t 🥇 Biggest allocating functions:")
-        for record in islice(
-            sorted(records, key=lambda _record: _record.size, reverse=True),
-            N_TOP_ALLOCS,
-        ):
+        writeln(f"\t 📊 Histogram of allocation sizes: |{histogram_txt}|")
+        writeln("\t 🥇 Biggest allocating functions:")
+        sorted_records = sorted(records, key=lambda _record: _record.size, reverse=True)
+        for record in islice(sorted_records, N_TOP_ALLOCS):
             stack_trace = record.stack_trace()
             if not stack_trace:
                 continue
             (function, file, line), *_ = stack_trace
-            terminalreporter.write_line(
-                f"\t\t- {function}:{file}:{line} -> {sizeof_fmt(record.size)}"
-            )
-        terminalreporter.write_line("\n")
+            writeln(f"\t\t- {function}:{file}:{line} -> {sizeof_fmt(record.size)}")
+        writeln("\n")
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -258,15 +236,17 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
+def value_or_ini(config: Config, key: str) -> object:
+    return config.getvalue(key) or config.getini(key)
+
+
 def pytest_configure(config: Config) -> None:
-    use_memray = config.getvalue("memray") or config.getini("memray")
-    if not use_memray:
+    if not value_or_ini(config, "memray"):
         return
     pytest_memray = Manager(config)
     config.pluginmanager.register(pytest_memray, "memray_manager")
 
     for marker, marker_fn in MARKERS.items():
         [args, *_] = inspect.getfullargspec(marker_fn)
-        config.addinivalue_line(
-            "markers", f"{marker}({', '.join(args)}): {marker_fn.__doc__}"
-        )
+        line = f"{marker}({', '.join(args)}): {marker_fn.__doc__}"
+        config.addinivalue_line("markers", line)
