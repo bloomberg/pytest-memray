@@ -1,14 +1,93 @@
 [build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling>=0.24", "hatch-vcs>=0.2"]
 
-requires = [
-     "setuptools",
-     "wheel",
+[project]
+name = "pytest-memray"
+description = "A simple plugin to use with pytest"
+readme.file = "README.md"
+readme.content-type = "text/markdown"
+license = "apache-2.0"
+urls.Homepage = "https://bloomberg.github.io/pytest-memray/"
+urls.Source = "https://github.com/bloomberg/pytest-memray"
+urls.Tracker = "https://github.com/bloomberg/pytest-memray/issues"
+authors = [
+  { name = "Pablo Galindo Salgado", email = "pgalindo3@bloomberg.net" },
+]
+maintainers = [
+  { name = "Pablo Galindo Salgado", email = "pgalindo3@bloomberg.net" },
+]
+requires-python = ">=3.8"
+dependencies = [
+  "pytest>=3.5",
+  "memray>=1",
+]
+optional-dependencies.docs = [
+  "furo",
+  "sphinx",
+  "sphinx-argparse",
+  "sphinx-inline-tabs",
+  "towncrier",
+]
+optional-dependencies.lint = [
+  "black",
+  "flake8",
+  "isort",
+  "mypy",
+]
+optional-dependencies.test = [
+  "covdefaults>=2.2",
+  "pytest>=7",
+  "coverage>=6.3"
+]
+dynamic = ["version"]
+classifiers = [
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Topic :: Software Development :: Debuggers",
 ]
 
-build-backend = 'setuptools.build_meta'
+[project.entry-points.pytest11]
+memray = "pytest_memray.plugin"
+
+[tool.hatch]
+build.dev-mode-dirs = ["src"]
+build.hooks.vcs.version-file = "src/pytest_memray/_version.py"
+build.hooks.vcs.template = "__version__ = \"{version}\"\n"
+version.source = "vcs"
+build.targets.sdist.include = ["/Makefile", "/tox.ini", "NEWS.rst", "/src", "/tests", "/docs"]
+
+[tool.black]
+line-length = 88
+
+[tool.coverage]
+run.dynamic_context = "test_function"
+run.source = ["pytest_memray", "tests"]
+run.plugins = ["covdefaults"]
+run.parallel = true
+report.fail_under = 96
+html.show_contexts = true
+html.skip_covered = false
+paths.source = [
+  "src",
+  ".tox*/*/lib/python*/site-packages",
+  ".tox*/pypy*/site-packages",
+  ".tox*\\*\\Lib\\site-packages",
+  "*/src",
+  "*\\src",
+]
+
+[tool.mypy]
+python_version = "3.8"
+show_error_codes = true
+strict = true
 
 [tool.isort]
-
 force_single_line = true
 multi_line_output = 3
 include_trailing_comma = true
@@ -16,7 +95,6 @@ force_grid_wrap = 0
 use_parentheses = true
 line_length = 88
 known_first_party=["pytest_memray"]
-known_third_party=["pytest"]
 
 [tool.towncrier]
 package = "pytest-memray"
@@ -24,9 +102,9 @@ package_dir = "src"
 filename = "NEWS.rst"
 directory = "news"
 type = [
-  { name = "Features",                  directory = "feature", showcontent = true },
+  { name = "Features", directory = "feature", showcontent = true },
   { name = "Deprecations and Removals", directory = "removal", showcontent = true },
-  { name = "Bug Fixes",                 directory = "bugfix",  showcontent = true },
-  { name = "Improved Documentation",    directory = "doc",     showcontent = true },
-  { name = "Miscellaneous",             directory = "misc",    showcontent = true },
+  { name = "Bug Fixes", directory = "bugfix", showcontent = true },
+  { name = "Improved Documentation", directory = "doc", showcontent = true },
+  { name = "Miscellaneous", directory = "misc", showcontent = true },
 ]

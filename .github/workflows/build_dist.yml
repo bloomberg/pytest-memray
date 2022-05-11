@@ -1,4 +1,4 @@
-name: Build Distributions
+name: Build
 
 on:
   push:
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   build_dist:
-    name: Build source and wheel distributions
+    name: Source and wheel distributions
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
