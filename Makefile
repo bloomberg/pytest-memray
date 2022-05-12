@@ -48,7 +48,7 @@ lint:  ## Lint all files
 	$(PYTHON) -m isort --check $(python_files)
 	$(PYTHON) -m flake8 $(python_files)
 	$(PYTHON) -m black --check --diff $(python_files)
-	# $(PYTHON) -m mypy src/pytest_memray --ignore-missing-imports
+	$(PYTHON) -m mypy src/pytest_memray --ignore-missing-imports
 
 .PHONY: docs
 docs:  ## Generate documentation

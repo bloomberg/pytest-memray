@@ -1,6 +1,6 @@
 """Sphinx configuration file for memray's documentation."""
-
 # -- General configuration ------------------------------------------------------------
+from __future__ import annotations
 
 extensions = [
     # first-party extensions
