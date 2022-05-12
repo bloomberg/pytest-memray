@@ -9,6 +9,7 @@ import tempfile
 import uuid
 from dataclasses import dataclass
 from itertools import islice
+from typing import Any
 from typing import Generator
 from typing import Iterable
 from typing import List
@@ -16,10 +17,12 @@ from typing import Tuple
 from typing import cast
 
 from _pytest.terminal import TerminalReporter
+from memray import AllocationRecord
 from memray import FileReader
 from memray import Metadata
 from memray import Tracker
 from pytest import CallInfo
+from pytest import CollectReport
 from pytest import Config
 from pytest import ExitCode
 from pytest import Function
@@ -52,7 +55,7 @@ def histogram(
     return [dist[b] for b in range(bins)]
 
 
-def cli_hist(data: Iterable[float], bins: int, *, log_scale=True) -> str:
+def cli_hist(data: Iterable[float], bins: int, *, log_scale: bool = True) -> str:
     bars = " ▁▂▃▄▅▆▇█"
     low = min(data)
     high = max(data)
@@ -76,26 +79,26 @@ class Result:
 
 
 class Manager:
-    def __init__(self, config) -> None:
+    def __init__(self, config: Config) -> None:
         self.results: dict[str, Result] = {}
         self.config = config
         self.result_path = tempfile.TemporaryDirectory()
 
-    @hookimpl(hookwrapper=True)
+    @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
     def pytest_unconfigure(self, config: Config) -> Generator[None, None, None]:
         yield
         self.result_path.cleanup()
 
-    @hookimpl(hookwrapper=True)
+    @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
     def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
         testfunction = pyfuncitem.obj
 
         @functools.wraps(testfunction)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> object | None:
             name = f"{uuid.uuid4().hex}.bin"
             result_file = pathlib.Path(self.result_path.name) / name
             with Tracker(result_file):
-                result = testfunction(*args, **kwargs)
+                result: object | None = testfunction(*args, **kwargs)
             try:
                 metadata = FileReader(result_file).metadata
             except OSError:
@@ -107,9 +110,9 @@ class Manager:
 
         yield
 
-    @hookimpl(hookwrapper=True)
+    @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
     def pytest_runtest_makereport(
-        self, item: Item, call: CallInfo
+        self, item: Item, call: CallInfo[None]
     ) -> Generator[None, TestReport | None, TestReport | None]:
         outcome = yield
         if call.when != "call" or outcome is None:
@@ -127,25 +130,29 @@ class Manager:
             if not result:
                 continue
             reader = FileReader(result.result_file)
-            allocations = list(reader.get_high_watermark_allocation_records())
-            result = marker_fn(*marker.args, **marker.kwargs, _allocations=allocations)
-            if result:
+            func = reader.get_high_watermark_allocation_records
+            allocations = list((func(merge_threads=True)))
+            res = marker_fn(*marker.args, **marker.kwargs, _allocations=allocations)
+            if res:
                 report.outcome = "failed"
                 report.longrepr = f"Memray detected problems with test {item.nodeid}"
-                report.sections.append(result)
+                report.sections.append(res)
                 outcome.force_result(report)
         return None
 
-    @hookimpl(hookwrapper=True, trylast=True)
-    def pytest_report_teststatus(self, report):
+    @hookimpl(hookwrapper=True, trylast=True)  # type: ignore[misc] # Untyped decorator
+    def pytest_report_teststatus(
+        self, report: CollectReport | TestReport
+    ) -> Generator[None, TestReport, None]:
         outcome = yield
         if report.when != "call" or report.outcome != "failed":
             return None
 
         if any("memray" in section for section, _ in report.sections):
             outcome.force_result(("failed", "M", "MEMORY PROBLEMS"))
+        return None
 
-    @hookimpl
+    @hookimpl  # type: ignore[misc] # Untyped decorator
     def pytest_terminal_summary(
         self, terminalreporter: TerminalReporter, exitstatus: ExitCode
     ) -> None:
@@ -168,7 +175,8 @@ class Manager:
         for test_id, total_size in total_sizes.most_common(max_results):
             result = self.results[test_id]
             reader = FileReader(result.result_file)
-            records = list(reader.get_high_watermark_allocation_records())
+            func = reader.get_high_watermark_allocation_records
+            records = list(func(merge_threads=True))
             if not records:
                 continue
             self._report_records_for_test(
@@ -180,7 +188,7 @@ class Manager:
 
     @staticmethod
     def _report_records_for_test(
-        records: Iterable[object],
+        records: Iterable[AllocationRecord],
         test_id: str,
         metadata: Metadata,
         terminalreporter: TerminalReporter,
