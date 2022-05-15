@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from memray import AllocationRecord
-
 from dataclasses import dataclass
 from typing import List
 from typing import Optional
 from typing import Tuple
+
+from memray import AllocationRecord
 
 from .utils import parse_memory_string
 from .utils import sizeof_fmt
@@ -49,7 +49,9 @@ class FailedTestMemoryInfo:
         )
 
 
-def limit_memory(limit: str, *, _allocations: list[AllocationRecord]) -> Optional[FailedTestMemoryInfo]:
+def limit_memory(
+    limit: str, *, _allocations: list[AllocationRecord]
+) -> Optional[FailedTestMemoryInfo]:
     """Limit memory used by the test."""
     max_memory = parse_memory_string(limit)
     total_allocated_memory = sum(record.size for record in _allocations)
