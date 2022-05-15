@@ -103,7 +103,9 @@ def test_limit_memory_marker_does_not_work_if_memray_inactive(
     "memlimit, mem_to_alloc",
     [(5, 100), (10, 200)],
 )
-def test_memray_with_junit_xml_error_msg(pytester: Pytester, memlimit, mem_to_alloc):
+def test_memray_with_junit_xml_error_msg(
+    pytester: Pytester, memlimit: int, mem_to_alloc: int
+):
     xml_output_file = pytester.makefile(".xml", "")
     pytester.makepyfile(
         f"""
@@ -115,18 +117,16 @@ def test_memray_with_junit_xml_error_msg(pytester: Pytester, memlimit, mem_to_al
         def test_memory_alloc_fails():
             allocator.valloc({mem_to_alloc})
             allocator.free()
-    """
+        """
     )
     result = pytester.runpytest("--memray", "--junit-xml", xml_output_file)
     assert result.ret == ExitCode.TESTS_FAILED
 
+    expected = f"Test was limited to {memlimit}.0B but allocated {mem_to_alloc}.0B"
     root = ET.parse(str(xml_output_file)).getroot()
     for testcase in root.iter("testcase"):
         failure = testcase.find("failure")
-        assert (
-            f"""Test was limited to {memlimit}.0B but allocated {mem_to_alloc}.0B"""
-            in failure.text
-        )
+        assert expected in failure.text
 
 
 def test_memray_with_junit_xml(pytester: Pytester) -> None:

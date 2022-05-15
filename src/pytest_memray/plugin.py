@@ -135,8 +135,8 @@ class Manager:
             res = marker_fn(*marker.args, **marker.kwargs, _allocations=allocations)
             if res:
                 report.outcome = "failed"
-                report.longrepr = res.as_longrepr()
-                report.sections.append(res.as_section())
+                report.longrepr = res.long_repr
+                report.sections.append(res.section)
                 outcome.force_result(report)
         return None
 

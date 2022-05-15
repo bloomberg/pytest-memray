@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
 from typing import Optional
 from typing import Tuple
 
@@ -20,16 +19,17 @@ class FailedTestMemoryInfo:
 
     max_memory: float
     total_allocated_memory: int
-    allocations: List[AllocationRecord]
+    allocations: list[AllocationRecord]
 
-    def as_section(self) -> PytestSection:
+    @property
+    def section(self) -> PytestSection:
         """Return a tuple in the format expected by section reporters."""
         total_memory_str = sizeof_fmt(self.total_allocated_memory)
         max_memory_str = sizeof_fmt(self.max_memory)
         text_lines = [
-            f"Test is using {total_memory_str} out of limit of {max_memory_str}"
+            f"Test is using {total_memory_str} out of limit of {max_memory_str}",
+            "List of allocations: ",
         ]
-        text_lines.append("List of allocations: ")
         for record in self.allocations:
             size = record.size
             stack_trace = record.stack_trace()
@@ -38,9 +38,10 @@ class FailedTestMemoryInfo:
             (function, file, line), *_ = stack_trace
             text_lines.append(f"\t- {function}:{file}:{line} -> {sizeof_fmt(size)}")
 
-        return ("memray-max-memory", "\n".join(text_lines))
+        return "memray-max-memory", "\n".join(text_lines)
 
-    def as_longrepr(self) -> str:
+    @property
+    def long_repr(self) -> str:
         """Generate a longrepr user-facing error message."""
         total_memory_str = sizeof_fmt(self.total_allocated_memory)
         max_memory_str = sizeof_fmt(self.max_memory)
@@ -56,7 +57,7 @@ def limit_memory(
     max_memory = parse_memory_string(limit)
     total_allocated_memory = sum(record.size for record in _allocations)
     if total_allocated_memory < max_memory:
-        return
+        return None
 
     return FailedTestMemoryInfo(max_memory, total_allocated_memory, _allocations)
 
