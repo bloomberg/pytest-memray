@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -314,3 +315,26 @@ def test_plugin_calls_tests_only_once(pytester: Pytester) -> None:
 
     mock.assert_called_once()
     assert result.ret == ExitCode.OK
+
+
+def test_bin_path(pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        def test_a():
+            assert [1]
+        def test_b():
+            assert [2]
+        """
+    )
+    dump = pytester.path / "d"
+    with patch("uuid.uuid4", return_value=SimpleNamespace(hex="H")) as mock:
+        result = pytester.runpytest("--memray", "--memray-bin-path", str(dump))
+
+    assert result.ret == ExitCode.OK
+    mock.assert_called_once()
+
+    assert dump.exists()
+    assert set(i.name for i in dump.iterdir()) == {
+        "H-test_bin_path-test_b.bin",
+        "H-test_bin_path-test_a.bin",
+    }

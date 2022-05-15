@@ -1,6 +1,12 @@
 from __future__ import annotations
 
+import os
 import re
+from argparse import Action
+from argparse import ArgumentParser
+from argparse import Namespace
+from pathlib import Path
+from typing import Sequence
 
 
 def sizeof_fmt(num: int | float, suffix: str = "B") -> str:
@@ -35,3 +41,34 @@ def parse_memory_string(mem_str: str) -> float:
         raise ValueError(f"Invalid memory size format: {mem_str}")
     quantity, unit = match.groups()
     return float(quantity) * UNIT_TO_MULTIPLIER[unit.upper()]
+
+
+class WriteEnabledDirectoryAction(Action):
+    def __call__(
+        self,
+        parser: ArgumentParser,
+        namespace: Namespace,
+        values: str | Sequence[str] | None,
+        option_string: str | None = None,
+    ) -> None:
+        assert isinstance(values, str)
+        folder = Path(values).absolute()
+        if folder.exists():
+            if folder.is_dir():
+                if not os.access(folder, os.W_OK):
+                    parser.error(f"{folder} is read-only")
+            else:
+                parser.error(f"{folder} must be a directory")
+        else:
+            try:
+                folder.mkdir(parents=True)
+            except OSError as exc:
+                parser.error(f"cannot create directory {folder} due to {exc}")
+        setattr(namespace, self.dest, folder)
+
+
+__all__ = [
+    "WriteEnabledDirectoryAction",
+    "parse_memory_string",
+    "sizeof_fmt",
+]
