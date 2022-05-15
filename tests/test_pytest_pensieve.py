@@ -1,14 +1,14 @@
+from __future__ import annotations
 import xml.etree.ElementTree as ET
 from unittest.mock import patch
 
 import pytest
 from pytest import ExitCode
+from pytest import Pytester
 
 
-def test_help_message(testdir):
-    result = testdir.runpytest(
-        "--help",
-    )
+def test_help_message(pytester: Pytester) -> None:
+    result = pytester.runpytest("--help")
     # fnmatch_lines does an assertion internally
     result.stdout.fnmatch_lines(
         [
@@ -19,8 +19,8 @@ def test_help_message(testdir):
     )
 
 
-def test_memray_is_called_when_activated(testdir):
-    testdir.makepyfile(
+def test_memray_is_called_when_activated(pytester: Pytester) -> None:
+    pytester.makepyfile(
         """
         def test_hello_world():
             assert 2 == 1 + 1
@@ -28,14 +28,14 @@ def test_memray_is_called_when_activated(testdir):
     )
 
     with patch("pytest_memray.plugin.Tracker") as mock:
-        result = testdir.runpytest("--memray")
+        result = pytester.runpytest("--memray")
 
     mock.assert_called_once()
     assert result.ret == ExitCode.OK
 
 
-def test_memray_is_not_called_when_not_activated(testdir):
-    testdir.makepyfile(
+def test_memray_is_not_called_when_not_activated(pytester: Pytester) -> None:
+    pytester.makepyfile(
         """
         def test_hello_world():
             assert 2 == 1 + 1
@@ -43,7 +43,7 @@ def test_memray_is_not_called_when_not_activated(testdir):
     )
 
     with patch("pytest_memray.plugin.Tracker") as mock:
-        result = testdir.runpytest()
+        result = pytester.runpytest()
 
     mock.assert_not_called()
     assert result.ret == ExitCode.OK
@@ -58,8 +58,8 @@ def test_memray_is_not_called_when_not_activated(testdir):
         (1024 * 1, ExitCode.OK),
     ],
 )
-def test_limit_memory_marker(testdir, size, outcome):
-    testdir.makepyfile(
+def test_limit_memory_marker(pytester: Pytester, size: int, outcome: ExitCode) -> None:
+    pytester.makepyfile(
         f"""
         import pytest
         from memray._test import MemoryAllocator
@@ -69,16 +69,18 @@ def test_limit_memory_marker(testdir, size, outcome):
         def test_memory_alloc_fails():
             allocator.valloc({size})
             allocator.free()
-    """
+        """
     )
 
-    result = testdir.runpytest("--memray")
+    result = pytester.runpytest("--memray")
 
     assert result.ret == outcome
 
 
-def test_limit_memory_marker_doesn_not_work_if_memray_inactive(testdir):
-    testdir.makepyfile(
+def test_limit_memory_marker_does_not_work_if_memray_inactive(
+    pytester: Pytester,
+) -> None:
+    pytester.makepyfile(
         """
         import pytest
         from memray._test import MemoryAllocator
@@ -88,10 +90,10 @@ def test_limit_memory_marker_doesn_not_work_if_memray_inactive(testdir):
         def test_memory_alloc_fails():
             allocator.valloc(4*1024)
             allocator.free()
-    """
+        """
     )
 
-    result = testdir.runpytest()
+    result = pytester.runpytest()
 
     assert result.ret == ExitCode.OK
 
@@ -100,9 +102,9 @@ def test_limit_memory_marker_doesn_not_work_if_memray_inactive(testdir):
     "memlimit, mem_to_alloc",
     [(5, 100), (10, 200)],
 )
-def test_memray_with_junit_xml_error_msg(testdir, memlimit, mem_to_alloc):
-    xml_output_file = testdir.makefile(".xml", "")
-    testdir.makepyfile(
+def test_memray_with_junit_xml_error_msg(pytester: Pytester, memlimit, mem_to_alloc):
+    xml_output_file = pytester.makefile(".xml", "")
+    pytester.makepyfile(
         f"""
         import pytest
         from memray._test import MemoryAllocator
@@ -114,7 +116,7 @@ def test_memray_with_junit_xml_error_msg(testdir, memlimit, mem_to_alloc):
             allocator.free()
     """
     )
-    result = testdir.runpytest("--memray", "--junit-xml", xml_output_file)
+    result = pytester.runpytest("--memray", "--junit-xml", xml_output_file)
     assert result.ret == ExitCode.TESTS_FAILED
 
     root = ET.parse(str(xml_output_file)).getroot()
@@ -126,8 +128,8 @@ def test_memray_with_junit_xml_error_msg(testdir, memlimit, mem_to_alloc):
         )
 
 
-def test_memray_with_junit_xml(testdir):
-    testdir.makepyfile(
+def test_memray_with_junit_xml(pytester: Pytester) -> None:
+    pytester.makepyfile(
         """
         import pytest
         from memray._test import MemoryAllocator
@@ -137,17 +139,15 @@ def test_memray_with_junit_xml(testdir):
         def test_memory_alloc_fails():
             allocator.valloc(1234)
             allocator.free()
-    """
+        """
     )
-
-    result = testdir.runpytest(
-        "--memray", "--junit-xml", str(testdir.tmpdir / "blech.xml")
-    )
+    path = str(pytester.path / "blech.xml")
+    result = pytester.runpytest("--memray", "--junit-xml", path)
     assert result.ret == ExitCode.TESTS_FAILED
 
 
-def test_memray_report(testdir):
-    testdir.makepyfile(
+def test_memray_report(pytester: Pytester) -> None:
+    pytester.makepyfile(
         """
         import pytest
         from memray._test import MemoryAllocator
@@ -166,10 +166,10 @@ def test_memray_report(testdir):
 
         def test_bar():
             allocating_func2()
-    """
+        """
     )
 
-    result = testdir.runpytest("--memray")
+    result = pytester.runpytest("--memray")
 
     assert result.ret == ExitCode.OK
 
@@ -188,8 +188,8 @@ def test_memray_report(testdir):
     assert "-> 1.0KiB" in output
 
 
-def test_memray_report_is_not_shown_if_deactivated(testdir):
-    testdir.makepyfile(
+def test_memray_report_is_not_shown_if_deactivated(pytester: Pytester) -> None:
+    pytester.makepyfile(
         """
         import pytest
         from memray._test import MemoryAllocator
@@ -208,10 +208,10 @@ def test_memray_report_is_not_shown_if_deactivated(testdir):
 
         def test_bar():
             allocating_func2()
-    """
+        """
     )
 
-    result = testdir.runpytest("--memray", "--hide-memray-summary")
+    result = pytester.runpytest("--memray", "--hide-memray-summary")
 
     assert result.ret == ExitCode.OK
 
@@ -230,8 +230,8 @@ def test_memray_report_is_not_shown_if_deactivated(testdir):
     assert "-> 1.0KiB" not in output
 
 
-def test_memray_report_limit(testdir):
-    testdir.makepyfile(
+def test_memray_report_limit(pytester: Pytester) -> None:
+    pytester.makepyfile(
         """
         import pytest
         from memray._test import MemoryAllocator
@@ -253,7 +253,7 @@ def test_memray_report_limit(testdir):
     """
     )
 
-    result = testdir.runpytest("--memray", "--most-allocations=1")
+    result = pytester.runpytest("--memray", "--most-allocations=1")
 
     assert result.ret == ExitCode.OK
 
@@ -263,8 +263,8 @@ def test_memray_report_limit(testdir):
     assert "results for test_memray_report_limit.py::test_bar" in output
 
 
-def test_failing_tests_are_not_reported(testdir):
-    testdir.makepyfile(
+def test_failing_tests_are_not_reported(pytester: Pytester) -> None:
+    pytester.makepyfile(
         """
         import pytest
         from memray._test import MemoryAllocator
@@ -284,10 +284,10 @@ def test_failing_tests_are_not_reported(testdir):
         def test_bar():
             allocating_func2()
             1/0
-    """
+        """
     )
 
-    result = testdir.runpytest("--memray")
+    result = pytester.runpytest("--memray")
 
     assert result.ret == ExitCode.TESTS_FAILED
 
@@ -297,19 +297,19 @@ def test_failing_tests_are_not_reported(testdir):
     assert "results for test_failing_tests_are_not_reported.py::test_bar" not in output
 
 
-def test_plugin_calls_tests_only_once(testdir):
-    testdir.makepyfile(
+def test_plugin_calls_tests_only_once(pytester: Pytester) -> None:
+    pytester.makepyfile(
         """
         counter = 0
         def test_hello_world():
             global counter
             counter += 1
             assert counter < 2
-    """
+        """
     )
 
     with patch("pytest_memray.plugin.Tracker") as mock:
-        result = testdir.runpytest("--memray")
+        result = pytester.runpytest("--memray")
 
     mock.assert_called_once()
     assert result.ret == ExitCode.OK

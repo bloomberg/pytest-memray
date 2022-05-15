@@ -9,7 +9,6 @@ CMakeCache.txt
 CMakeFiles
 CMakeScripts
 Testing
-Makefile
 cmake_install.cmake
 install_manifest.txt
 compile_commands.json
@@ -74,6 +73,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+/src/pytest_memray/_version.py
 
 # Translations
 *.mo

@@ -1,8 +1,0 @@
-black
-flake8
-isort
-mypy
-bump2version
-towncrier
-check-manifest
--r requirements-docs.txt
