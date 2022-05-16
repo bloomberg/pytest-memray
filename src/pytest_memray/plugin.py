@@ -135,8 +135,8 @@ class Manager:
             res = marker_fn(*marker.args, **marker.kwargs, _allocations=allocations)
             if res:
                 report.outcome = "failed"
-                report.longrepr = f"Memray detected problems with test {item.nodeid}"
-                report.sections.append(res)
+                report.longrepr = res.long_repr
+                report.sections.append(res.section)
                 outcome.force_result(report)
         return None
 

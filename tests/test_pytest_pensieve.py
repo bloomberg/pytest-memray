@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import xml.etree.ElementTree as ET
 from unittest.mock import patch
 
 import pytest
@@ -96,6 +97,36 @@ def test_limit_memory_marker_does_not_work_if_memray_inactive(
     result = pytester.runpytest()
 
     assert result.ret == ExitCode.OK
+
+
+@pytest.mark.parametrize(
+    "memlimit, mem_to_alloc",
+    [(5, 100), (10, 200)],
+)
+def test_memray_with_junit_xml_error_msg(
+    pytester: Pytester, memlimit: int, mem_to_alloc: int
+):
+    xml_output_file = pytester.makefile(".xml", "")
+    pytester.makepyfile(
+        f"""
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        @pytest.mark.limit_memory("{memlimit}B")
+        def test_memory_alloc_fails():
+            allocator.valloc({mem_to_alloc})
+            allocator.free()
+        """
+    )
+    result = pytester.runpytest("--memray", "--junit-xml", xml_output_file)
+    assert result.ret == ExitCode.TESTS_FAILED
+
+    expected = f"Test was limited to {memlimit}.0B but allocated {mem_to_alloc}.0B"
+    root = ET.parse(str(xml_output_file)).getroot()
+    for testcase in root.iter("testcase"):
+        failure = testcase.find("failure")
+        assert expected in failure.text
 
 
 def test_memray_with_junit_xml(pytester: Pytester) -> None:
