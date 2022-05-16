@@ -12,9 +12,8 @@ from .utils import sizeof_fmt
 PytestSection = Tuple[str, str]
 
 
-# REVIEW bikeshed the name?
 @dataclass
-class FailedTestMemoryInfo:
+class _MemoryInfo:
     """Type that holds all memray-related info for a failed test."""
 
     max_memory: float
@@ -37,7 +36,6 @@ class FailedTestMemoryInfo:
                 continue
             (function, file, line), *_ = stack_trace
             text_lines.append(f"\t- {function}:{file}:{line} -> {sizeof_fmt(size)}")
-
         return "memray-max-memory", "\n".join(text_lines)
 
     @property
@@ -45,21 +43,18 @@ class FailedTestMemoryInfo:
         """Generate a longrepr user-facing error message."""
         total_memory_str = sizeof_fmt(self.total_allocated_memory)
         max_memory_str = sizeof_fmt(self.max_memory)
-        return (
-            f"""Test was limited to {max_memory_str} but allocated {total_memory_str}"""
-        )
+        return f"Test was limited to {max_memory_str} but allocated {total_memory_str}"
 
 
 def limit_memory(
     limit: str, *, _allocations: list[AllocationRecord]
-) -> Optional[FailedTestMemoryInfo]:
+) -> Optional[_MemoryInfo]:
     """Limit memory used by the test."""
     max_memory = parse_memory_string(limit)
     total_allocated_memory = sum(record.size for record in _allocations)
     if total_allocated_memory < max_memory:
         return None
-
-    return FailedTestMemoryInfo(max_memory, total_allocated_memory, _allocations)
+    return _MemoryInfo(max_memory, total_allocated_memory, _allocations)
 
 
 __all__ = [
