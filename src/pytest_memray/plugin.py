@@ -104,7 +104,8 @@ class Manager:
             if self._is_result_tmp:
                 name = f"{uuid.uuid4().hex}.bin"
             else:
-                name = f"{self._run_id}-{func.__module__}-{func.__qualname__}.bin"
+                of_id = pyfuncitem.nodeid.replace("::", "-")
+                name = f"{self._run_id}-{of_id}.bin"
             result_file = Path(self.result_path.name) / name
             with Tracker(result_file):
                 result: object | None = func(*args, **kwargs)

@@ -320,10 +320,13 @@ def test_plugin_calls_tests_only_once(pytester: Pytester) -> None:
 def test_bin_path(pytester: Pytester) -> None:
     pytester.makepyfile(
         """
+        import pytest
+
         def test_a():
             assert [1]
-        def test_b():
-            assert [2]
+        @pytest.mark.parametrize('i', [1, 2])
+        def test_b(i):
+            assert [2] * i
         """
     )
     dump = pytester.path / "d"
@@ -334,7 +337,8 @@ def test_bin_path(pytester: Pytester) -> None:
     mock.assert_called_once()
 
     assert dump.exists()
-    assert set(i.name for i in dump.iterdir()) == {
-        "H-test_bin_path-test_b.bin",
-        "H-test_bin_path-test_a.bin",
+    assert {i.name for i in dump.iterdir()} == {
+        "H-test_bin_path.py-test_a.bin",
+        "H-test_bin_path.py-test_b[1].bin",
+        "H-test_bin_path.py-test_b[2].bin",
     }
