@@ -16,3 +16,5 @@ It can produce reports like:
    installation
    usage
    configuration
+   news
+
