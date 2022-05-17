@@ -1,12 +1,7 @@
-=============
 Configuration
 =============
 
 This plugin provides a clean minimal set of command line options that are added to pytest.
-
-Reference
-=========
-
 The complete list of command line options is:
 
 .. tab:: Command line options
@@ -33,4 +28,3 @@ The complete list of command line options is:
 
   ``hide_memray_summary(bool)``
     Hide the memray summary at the end of the execution.
-

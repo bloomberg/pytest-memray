@@ -27,6 +27,7 @@ optional-dependencies.docs = [
   "sphinx",
   "sphinx-argparse",
   "sphinx-inline-tabs",
+  "sphinxcontrib-programoutput",
   "towncrier",
 ]
 optional-dependencies.lint = [

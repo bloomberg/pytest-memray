@@ -1,5 +1,4 @@
-"""Sphinx configuration file for memray's documentation."""
-# -- General configuration ------------------------------------------------------------
+"""Sphinx configuration file for pytest-memray documentation."""
 from __future__ import annotations
 
 import sys
@@ -7,28 +6,18 @@ from pathlib import Path
 from subprocess import check_output
 
 from sphinx.application import Sphinx
+from sphinxcontrib.programoutput import Command
 
 extensions = [
-    # first-party extensions
-    "sphinx.ext.autodoc",
-    "sphinx.ext.doctest",
     "sphinx.ext.extlinks",
     "sphinx.ext.githubpages",
-    "sphinx.ext.intersphinx",
-    "sphinx.ext.napoleon",
-    "sphinx.ext.todo",
-    "sphinx.ext.viewcode",
-    # third-party extensions
     "sphinxarg.ext",
     "sphinx_inline_tabs",
+    "sphinxcontrib.programoutput",
 ]
 exclude_patterns = ["_build", "news/*", "_draft.rst"]
-# General information about the project.
 project = "pytest-memray"
 author = "Pablo Galindo Salgado"
-
-# -- Options for HTML -----------------------------------------------------------------
-
 html_title = project
 html_theme = "furo"
 html_static_path = ["_static"]
@@ -40,14 +29,19 @@ extlinks = {
     "user": ("https://github.com/%s", "@"),
     "issue": ("https://github.com/bloomberg/pytest-memray/issue/%s", "#"),
 }
+programoutput_prompt_template = "$ pytest --memray /w/demo \n{output}"
+prev = Command.get_output
+here = Path(__file__).parent
 
 
-# -- Options for smartquotes ----------------------------------------------------------
+def _get_output(self):
+    code, out = prev(self)
+    out = out.replace(str(here.parent / ".tox" / "docs"), "/venv")
+    out = out.replace(str(here), "/w")
+    return code, out
 
-# Disable the conversion of dashes so that long options like "--find-links" won't
-# render as "-find-links" if included in the text.The default of "qDe" converts normal
-# quote characters ('"' and "'"), en and em dashes ("--" and "---"), and ellipses "..."
-smartquotes_action = "qe"
+
+Command.get_output = _get_output
 
 
 def setup(app: Sphinx) -> None:

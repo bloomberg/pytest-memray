@@ -13,7 +13,7 @@
 pytest-memray is a pytest plugin for easy integration of
 [memray](https://github.com/bloomberg/memray).
 
-# Installation
+## Installation
 
 pytest-memray requires Python 3.7+ and can be easily installed using most common Python
 packaging tools. We recommend installing the latest stable release from
@@ -23,12 +23,12 @@ packaging tools. We recommend installing the latest stable release from
 pip install pytest-memray
 ```
 
-# Documentation
+## Documentation
 
 You can find the latest documentation available
 [here](https://pytest-memray.readthedocs.io/en/latest/).
 
-# Usage
+# Quick introduction
 
 To use the plugin in a pytest run, simply add `--memray` to the command line invocation:
 
@@ -36,68 +36,14 @@ To use the plugin in a pytest run, simply add `--memray` to the command line inv
 pytest --memray tests
 ```
 
-Would produce a report like:
+After the test suite runs you'll see a memory report printed
+[as shown here](https://pytest-memray.readthedocs.io/en/latest/usage.html#allocation-tracking):
 
-```shell
-python3 -m pytest tests --memray
-============================== test session starts ==============================
-platform linux -- Python 3.8.10, pytest-6.2.4, py-1.10.0, pluggy-0.13.1
-rootdir: /mypackage, configfile: pytest.ini
-plugins: cov-2.12.0, memray-0.1.0
-collected 21 items
-
-tests/test_package.py .....................                                                                                                                                                                                                                      [100%]
-
-================================= MEMRAY REPORT =================================
-Allocations results for tests/test_package.py::some_test_that_allocates
-
-	 📦 Total memory allocated: 24.4MiB
-	 📏 Total allocations: 33929
-	 📊 Histogram of allocation sizes: |▂   █    |
-	 🥇 Biggest allocating functions:
-		- parse:/opt/bb/lib/python3.8/ast.py:47 -> 3.0MiB
-		- parse:/opt/bb/lib/python3.8/ast.py:47 -> 2.3MiB
-		- _visit:/opt/bb/lib/python3.8/site-packages/astroid/transforms.py:62 -> 576.0KiB
-		- parse:/opt/bb/lib/python3.8/ast.py:47 -> 517.6KiB
-		- __init__:/opt/bb/lib/python3.8/site-packages/astroid/node_classes.py:1353 -> 512.0KiB
-```
-
-## Configuration
-
-This plugin provides a clean minimal set of command line options that are added to
-pytest.
-
-- `--memray`: Activate memray tracking.
-- `--most-allocations=MOST_ALLOCATIONS`: Show the N tests that allocate most memory (N=0
-  for all).
-- `--hide-memray-summary`: Hide the memray summary at the end of the execution.
-
-## Markers
-
-There are some builtin markers and fixtures in `pytest-memray`:
-
-### `limit_memory`
-
-When this marker is applied to a test, it will cause the test to fail if the execution
-of the test allocates more memory than allowed. It takes a single argument with a string
-indicating the maximum memory that the test can allocate.
-
-The format for the string is `<NUMBER> ([KMGTP]B|B)`. The marker will raise ValueError
-if the string format cannot be parsed correctly.
-
-Example of usage:
-
-```python
-@pytest.mark.limit_memory("24 MB")
-def test_foobar():
-    # do some stuff that allocates memory
-```
-
-# License
+## License
 
 pytest-memray is Apache-2.0 licensed, as found in the [LICENSE](LICENSE) file.
 
-# Code of Conduct
+## Code of Conduct
 
 - [Code of Conduct](https://github.com/bloomberg/.github/blob/main/CODE_OF_CONDUCT.md)
 
@@ -105,7 +51,7 @@ This project has adopted a Code of Conduct. If you have any concerns about the C
 behavior which you have experienced in the project, please contact us at
 opensource@bloomberg.net.
 
-# Security Policy
+## Security Policy
 
 - [Security Policy](https://github.com/bloomberg/pytest-memray/security/policy)
 
@@ -116,7 +62,7 @@ any methods you've found to reproduce it.
 Please do NOT open an issue in the GitHub repository, as we'd prefer to keep
 vulnerability reports private until we've had an opportunity to review and address them.
 
-# Contributing
+## Contributing
 
 We welcome your contributions to help us improve and extend this project!
 
@@ -125,7 +71,7 @@ If you have any questions about this process or any other aspect of contributing
 Bloomberg open source project, feel free to email opensource@bloomberg.net, and we'll
 get your questions answered as quickly as we can.
 
-## Contribution Licensing
+### Contribution Licensing
 
 Since this project is distributed under the terms of an [open source license](LICENSE),
 contributions that you make are licensed under the same terms. In order for us to be
@@ -148,7 +94,7 @@ command.
 
 You must use your real name (sorry, no pseudonyms, and no anonymous contributions).
 
-## Steps
+### Steps
 
 - Create an Issue, selecting 'Feature Request', and explain the proposed change.
 - Follow the guidelines in the issue template presented to you.
@@ -156,7 +102,7 @@ You must use your real name (sorry, no pseudonyms, and no anonymous contribution
 - Submit a Pull Request and link it to the Issue by including "#<issue number>" in the
   Pull Request summary.
 
-## Development
+### Development
 
 The project requires a Linux OS to work. To set up a DEV environment use tox (or
 directly the make targets). You can use Docker to run the test suite on non Linux as in
