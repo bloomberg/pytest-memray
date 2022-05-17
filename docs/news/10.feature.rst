@@ -1,2 +1,0 @@
-Allow passing ``--memray-bin-path`` argument to the CLI to allow
-persisting the binary dumps - by :user:`gaborbernat`.

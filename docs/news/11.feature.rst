@@ -1,1 +1,0 @@
-Release a pure python wheel - by :user:`gaborbernat`.
