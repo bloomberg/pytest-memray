@@ -8,9 +8,9 @@ description = "A simple plugin to use with pytest"
 readme.file = "README.md"
 readme.content-type = "text/markdown"
 license = "apache-2.0"
-urls.Homepage = "https://bloomberg.github.io/pytest-memray/"
-urls.Source = "https://github.com/bloomberg/pytest-memray"
-urls.Tracker = "https://github.com/bloomberg/pytest-memray/issues"
+urls."Bug Tracker" = "https://github.com/bloomberg/pytest-memray/issues"
+urls.Documentation = "https://pytest-memray.readthedocs.io"
+urls."Source Code" = "https://github.com/bloomberg/pytest-memray"
 authors = [
   { name = "Pablo Galindo Salgado", email = "pgalindo3@bloomberg.net" },
 ]
@@ -94,7 +94,7 @@ include_trailing_comma = true
 force_grid_wrap = 0
 use_parentheses = true
 line_length = 88
-known_first_party=["pytest_memray"]
+known_first_party = ["pytest_memray"]
 
 [tool.towncrier]
 name = "pytest-memray"
