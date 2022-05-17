@@ -2,10 +2,11 @@
 
 # pytest-memray
 
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pytest-memray)
-![PyPI - Implementation](https://img.shields.io/pypi/implementation/pytest-memray)
-![PyPI](https://img.shields.io/pypi/v/pytest-memray)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/pytest-memray)
+[![PyPI](https://img.shields.io/pypi/v/pytest-memray?style=flat-square)](https://pypi.org/project/pytest-memray)
+[![PyPI - Implementation](https://img.shields.io/pypi/implementation/pytest-memray?style=flat-square)](https://pypi.org/project/pytest-memray)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pytest-memray?style=flat-square)](https://pypi.org/project/pytest-memray)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/pytest-memray?style=flat-square)](https://pypistats.org/packages/pytest-memray)
+[![PyPI - License](https://img.shields.io/pypi/l/pytest-memray?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/bloomberg/pytest-memray/actions/workflows/build.yml/badge.svg)](https://github.com/bloomberg/pytest-memray/actions/workflows/build.yml)
 ![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)
 
@@ -25,7 +26,7 @@ pip install pytest-memray
 # Documentation
 
 You can find the latest documentation available
-[here](https://bloomberg.github.io/pytest-memray/).
+[here](https://pytest-memray.readthedocs.io/en/latest/).
 
 # Usage
 
@@ -164,4 +165,3 @@ directly the make targets). You can use Docker to run the test suite on non Linu
 ```shell
 docker-compose run --rm test tox
 ```
-

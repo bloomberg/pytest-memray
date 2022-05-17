@@ -1,0 +1,2 @@
+Fix documentation links to point from Gitub Pages to readthedocs.org - by :user:`gaborbernat`.
+
