@@ -1,0 +1,1 @@
+Move documentation from Github Pages to readthedocs - by :user:`gaborbernat`.

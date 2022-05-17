@@ -162,3 +162,4 @@ directly the make targets). You can use Docker to run the test suite on non Linu
 ```console
 docker-compose run --rm test tox
 ```
+

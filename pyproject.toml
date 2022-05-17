@@ -60,7 +60,7 @@ build.dev-mode-dirs = ["src"]
 build.hooks.vcs.version-file = "src/pytest_memray/_version.py"
 build.hooks.vcs.template = "__version__ = \"{version}\"\n"
 version.source = "vcs"
-build.targets.sdist.include = ["/Makefile", "/tox.ini", "NEWS.rst", "/src", "/tests", "/docs"]
+build.targets.sdist.include = ["/Makefile", "/tox.ini", "/src", "/tests", "/docs"]
 
 [tool.black]
 line-length = 88
@@ -97,10 +97,12 @@ line_length = 88
 known_first_party=["pytest_memray"]
 
 [tool.towncrier]
-package = "pytest-memray"
-package_dir = "src"
-filename = "NEWS.rst"
-directory = "news"
+name = "pytest-memray"
+filename = "docs/news.rst"
+directory = "docs/news"
+title_format = false
+issue_format = ":issue:`{issue}`"
+template = "docs/news/template.jinja2"
 type = [
   { name = "Features", directory = "feature", showcontent = true },
   { name = "Deprecations and Removals", directory = "removal", showcontent = true },

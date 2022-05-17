@@ -1,0 +1,1 @@
+Switch build backend from ``setuptools`` to ``hatchling`` - by :user:`gaborbernat`.

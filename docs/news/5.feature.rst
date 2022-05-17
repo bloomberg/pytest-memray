@@ -1,0 +1,1 @@
+Report memory limit and allocated memory in longrepr - by :user:`petr-tik`.

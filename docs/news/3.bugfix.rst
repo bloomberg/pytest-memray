@@ -1,0 +1,1 @@
+Causes built-in junit-xml results writer to fail - by :user:`petr-tik`.
