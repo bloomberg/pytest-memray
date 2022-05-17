@@ -4,11 +4,12 @@ import collections
 import functools
 import inspect
 import math
-import pathlib
-import tempfile
+import os
 import uuid
 from dataclasses import dataclass
 from itertools import islice
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 from typing import Generator
 from typing import Iterable
@@ -32,6 +33,7 @@ from pytest import TestReport
 from pytest import hookimpl
 
 from .marks import limit_memory
+from .utils import WriteEnabledDirectoryAction
 from .utils import sizeof_fmt
 
 MARKERS = {"limit_memory": limit_memory}
@@ -75,30 +77,40 @@ ResultElement = List[Tuple[object, int]]
 @dataclass
 class Result:
     metadata: Metadata
-    result_file: pathlib.Path
+    result_file: Path
 
 
 class Manager:
     def __init__(self, config: Config) -> None:
         self.results: dict[str, Result] = {}
         self.config = config
-        self.result_path = tempfile.TemporaryDirectory()
+        path: Path | None = config.getvalue("memray_bin_path")
+        self.result_path: TemporaryDirectory[str] | Path = path or TemporaryDirectory()
+        self._is_result_tmp: bool = path is None
+        self._run_id = uuid.uuid4().hex
 
     @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
     def pytest_unconfigure(self, config: Config) -> Generator[None, None, None]:
         yield
-        self.result_path.cleanup()
+        if self._is_result_tmp:
+            assert isinstance(self.result_path, TemporaryDirectory)
+            self.result_path.cleanup()
 
     @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
     def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
-        testfunction = pyfuncitem.obj
+        func = pyfuncitem.obj
 
-        @functools.wraps(testfunction)
+        @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> object | None:
-            name = f"{uuid.uuid4().hex}.bin"
-            result_file = pathlib.Path(self.result_path.name) / name
+            if self._is_result_tmp:
+                name = f"{uuid.uuid4().hex}.bin"
+            else:
+                of_id = pyfuncitem.nodeid.replace("::", "-")
+                of_id = of_id.replace(os.sep, "-")
+                name = f"{self._run_id}-{of_id}.bin"
+            result_file = Path(self.result_path.name) / name
             with Tracker(result_file):
-                result: object | None = testfunction(*args, **kwargs)
+                result: object | None = func(*args, **kwargs)
             try:
                 metadata = FileReader(result_file).metadata
             except OSError:
@@ -219,6 +231,12 @@ def pytest_addoption(parser: Parser) -> None:
         action="store_true",
         default=False,
         help="Activate memray tracking",
+    )
+    group.addoption(
+        "--memray-bin-path",
+        action=WriteEnabledDirectoryAction,
+        default=None,
+        help="Path where to write the memray binary dumps (by default a temporary folder)",
     )
     group.addoption(
         "--hide-memray-summary",

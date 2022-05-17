@@ -20,6 +20,9 @@ The complete list of command line options is:
   ``--hide-memray-summary``
     Hide the memray summary at the end of the execution.
 
+  ``--memray-bin-path``
+    Path where to write the memray binary dumps (by default a temporary folder).
+
 .. tab:: Config file options
 
   ``memray(bool)``
