@@ -4,6 +4,7 @@ import collections
 import functools
 import inspect
 import math
+import os
 import uuid
 from dataclasses import dataclass
 from itertools import islice
@@ -105,6 +106,7 @@ class Manager:
                 name = f"{uuid.uuid4().hex}.bin"
             else:
                 of_id = pyfuncitem.nodeid.replace("::", "-")
+                of_id = of_id.replace(os.sep, "-")
                 name = f"{self._run_id}-{of_id}.bin"
             result_file = Path(self.result_path.name) / name
             with Tracker(result_file):
