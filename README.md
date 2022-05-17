@@ -9,7 +9,8 @@
 [![Tests](https://github.com/bloomberg/pytest-memray/actions/workflows/build.yml/badge.svg)](https://github.com/bloomberg/pytest-memray/actions/workflows/build.yml)
 ![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)
 
-pytest-memray is a pytest plugin for easy integration of `memray`.
+pytest-memray is a pytest plugin for easy integration of
+[memray](https://github.com/bloomberg/memray).
 
 # Installation
 
@@ -18,7 +19,7 @@ packaging tools. We recommend installing the latest stable release from
 [PyPI](https://pypi.org/project/pytest-memray/) with pip:
 
 ```shell
-    pip install pytest-memray
+pip install pytest-memray
 ```
 
 # Documentation
@@ -30,15 +31,15 @@ You can find the latest documentation available
 
 To use the plugin in a pytest run, simply add `--memray` to the command line invocation:
 
-```
-pytest --memray tests/
+```shell
+pytest --memray tests
 ```
 
 Would produce a report like:
 
-```
+```shell
 python3 -m pytest tests --memray
-=============================================================================================================================== test session starts ================================================================================================================================
+============================== test session starts ==============================
 platform linux -- Python 3.8.10, pytest-6.2.4, py-1.10.0, pluggy-0.13.1
 rootdir: /mypackage, configfile: pytest.ini
 plugins: cov-2.12.0, memray-0.1.0
@@ -46,8 +47,7 @@ collected 21 items
 
 tests/test_package.py .....................                                                                                                                                                                                                                      [100%]
 
-
-================================================================================================================================= MEMRAY REPORT ==================================================================================================================================
+================================= MEMRAY REPORT =================================
 Allocations results for tests/test_package.py::some_test_that_allocates
 
 	 📦 Total memory allocated: 24.4MiB
@@ -138,7 +138,9 @@ projects.
 To participate under these terms, all that you must do is include a line like the
 following as the last line of the commit message for each commit in your contribution:
 
-    Signed-Off-By: Random J. Developer <random@developer.example.org>
+```git
+Signed-Off-By: Random J. Developer <random@developer.example.org>
+```
 
 The simplest way to accomplish this is to add `-s` or `--signoff` to your `git commit`
 command.
@@ -159,7 +161,7 @@ The project requires a Linux OS to work. To set up a DEV environment use tox (or
 directly the make targets). You can use Docker to run the test suite on non Linux as in
 (you can parametrize tox by passing additional arguments at the end):
 
-```console
+```shell
 docker-compose run --rm test tox
 ```
 
