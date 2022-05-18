@@ -15,8 +15,8 @@ pytest-memray is a pytest plugin for easy integration of
 
 # Installation
 
-pytest-memray requires Python 3.7+ and can be easily installed using most common Python
-packaging tools. We recommend installing the latest stable release from
+pytest-memray requires Python 3.8 or higher and can be easily installed using most common
+Python packaging tools. We recommend installing the latest stable release from
 [PyPI](https://pypi.org/project/pytest-memray/) with pip:
 
 ```shell
