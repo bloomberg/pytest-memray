@@ -36,7 +36,7 @@ here = Path(__file__).parent
 
 def _get_output(self):
     code, out = prev(self)
-    out = out.replace(str(here.parent / ".tox" / "docs"), "/venv")
+    out = out.replace(str(Path(sys.executable).parents[1]), "/v")
     out = out.replace(str(here), "/w")
     return code, out
 

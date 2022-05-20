@@ -28,7 +28,7 @@ pip install pytest-memray
 You can find the latest documentation available
 [here](https://pytest-memray.readthedocs.io/en/latest/).
 
-# Quick introduction
+## Quick introduction
 
 To use the plugin in a pytest run, simply add `--memray` to the command line invocation:
 
@@ -36,8 +36,68 @@ To use the plugin in a pytest run, simply add `--memray` to the command line inv
 pytest --memray tests
 ```
 
-After the test suite runs you'll see a memory report printed
-[as shown here](https://pytest-memray.readthedocs.io/en/latest/usage.html#allocation-tracking):
+After the test suite runs you'll see a memory report printed:
+
+```bash
+=================================== test session starts ====================================
+platform linux -- Python 3.10.4, pytest-7.1.2, pluggy-1.0.0
+cachedir: /v/.pytest_cache
+rootdir: /w
+plugins: memray-1.1.0
+collected 2 items
+
+demo/test_ok.py .M                                                                   [100%]
+
+========================================= FAILURES =========================================
+____________________________________ test_memory_exceed ____________________________________
+Test was limited to 100.0KiB but allocated 117.2KiB
+------------------------------------ memray-max-memory -------------------------------------
+Test is using 117.2KiB out of limit of 100.0KiB
+List of allocations:
+	- <listcomp>:/w/demo/test_ok.py:17 -> 117.2KiB
+
+====================================== MEMRAY REPORT =======================================
+Allocations results for demo/test_ok.py::test_memory_exceed
+
+	 📦 Total memory allocated: 117.2KiB
+	 📏 Total allocations: 30
+	 📊 Histogram of allocation sizes: |█|
+	 🥇 Biggest allocating functions:
+		- <listcomp>:/w/demo/test_ok.py:17 -> 117.2KiB
+
+
+Allocations results for demo/test_ok.py::test_track
+
+	 📦 Total memory allocated: 54.9KiB
+	 📏 Total allocations: 71
+	 📊 Histogram of allocation sizes: |█   ▅    |
+	 🥇 Biggest allocating functions:
+		- test_track:/w/demo/test_ok.py:12 -> 39.1KiB
+		- _compile_bytecode:<frozen importlib._bootstrap_external>:672 -> 7.2KiB
+		- _call_with_frames_removed:<frozen importlib._bootstrap>:241 -> 4.7KiB
+		- _call_with_frames_removed:<frozen importlib._bootstrap>:241 -> 1.8KiB
+		- _is_marked_for_rewrite:/v/lib/python3.10/site-packages/_pytest/assertion/rewrite.py:240 -> 1.1KiB
+
+
+================================= short test summary info ==================================
+MEMORY PROBLEMS demo/test_ok.py::test_memory_exceed
+=============================== 1 failed, 1 passed in 0.01s ================================
+```
+
+## Configuration - CLI flags
+
+- `--memray` - activate memray tracking
+- `--most-allocations=MOST_ALLOCATIONS` - show the N tests that allocate most memory
+  (N=0 for all)
+- `--hide-memray-summary` - hide the memray summary at the end of the execution
+- `--memray-bin-path` - path where to write the memray binary dumps (by default a
+  temporary folder)
+
+## Configuration - INI
+
+- `memray(bool)` - activate memray tracking
+- `most-allocations(string)` - show the N tests that allocate most memory (N=0 for all)
+- `hide_memray_summary(bool)` - hide the memray summary at the end of the execution
 
 ## License
 
