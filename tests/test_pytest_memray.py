@@ -341,6 +341,7 @@ def test_bin_path(pytester: Pytester) -> None:
         "H-magic-test_a.py-test_a.bin",
         "H-magic-test_a.py-test_b[1].bin",
     }
+
     output = result.stdout.str()
     assert f"Created 3 binary dumps at {dump} with prefix H" in output
 

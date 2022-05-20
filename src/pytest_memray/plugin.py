@@ -103,8 +103,7 @@ class Manager:
     def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
         func = pyfuncitem.obj
 
-        @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> object | None:
+        def _build_bin_path() -> Path:
             if self._tmp_dir is None:
                 of_id = pyfuncitem.nodeid.replace("::", "-")
                 of_id = of_id.replace(os.sep, "-")
@@ -114,7 +113,11 @@ class Manager:
             result_file = self.result_path / name
             if self._tmp_dir is None and result_file.exists():
                 result_file.unlink()
+            return result_file
 
+        @functools.wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> object | None:
+            result_file = _build_bin_path()
             with Tracker(result_file):
                 result: object | None = func(*args, **kwargs)
             try:
@@ -125,7 +128,6 @@ class Manager:
             return result
 
         pyfuncitem.obj = wrapper
-
         yield
 
     @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
