@@ -85,16 +85,19 @@ class Manager:
         self.results: dict[str, Result] = {}
         self.config = config
         path: Path | None = config.getvalue("memray_bin_path")
-        self.result_path: TemporaryDirectory[str] | Path = path or TemporaryDirectory()
-        self._is_result_tmp: bool = path is None
-        self._run_id = uuid.uuid4().hex
+        if path is None:
+            self._tmp_dir: None | TemporaryDirectory[str] = TemporaryDirectory()
+            self.result_path: Path = Path(self._tmp_dir.name)
+        else:
+            self._tmp_dir = None
+            self.result_path = path
+        self._bin_prefix = config.getvalue("memray_bin_prefix") or uuid.uuid4().hex
 
     @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
     def pytest_unconfigure(self, config: Config) -> Generator[None, None, None]:
         yield
-        if self._is_result_tmp:
-            assert isinstance(self.result_path, TemporaryDirectory)
-            self.result_path.cleanup()
+        if self._tmp_dir is not None:
+            self._tmp_dir.cleanup()
 
     @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
     def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
@@ -102,13 +105,16 @@ class Manager:
 
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> object | None:
-            if self._is_result_tmp:
-                name = f"{uuid.uuid4().hex}.bin"
-            else:
+            if self._tmp_dir is None:
                 of_id = pyfuncitem.nodeid.replace("::", "-")
                 of_id = of_id.replace(os.sep, "-")
-                name = f"{self._run_id}-{of_id}.bin"
-            result_file = Path(self.result_path.name) / name
+                name = f"{self._bin_prefix}-{of_id}.bin"
+            else:
+                name = f"{uuid.uuid4().hex}.bin"
+            result_file = self.result_path / name
+            if self._tmp_dir is None and result_file.exists():
+                result_file.unlink()
+
             with Tracker(result_file):
                 result: object | None = func(*args, **kwargs)
             try:
@@ -197,6 +203,10 @@ class Manager:
                 metadata=reader.metadata,
                 terminalreporter=terminalreporter,
             )
+        if self._tmp_dir is None:
+            msg = f"Created {len(total_sizes)} binary dumps at {self.result_path}"
+            msg += f" with prefix {self._bin_prefix}"
+            terminalreporter.write_line(msg)
 
     @staticmethod
     def _report_records_for_test(
@@ -237,6 +247,11 @@ def pytest_addoption(parser: Parser) -> None:
         action=WriteEnabledDirectoryAction,
         default=None,
         help="Path where to write the memray binary dumps (by default a temporary folder)",
+    )
+    group.addoption(
+        "--memray-bin-prefix",
+        default=None,
+        help="Prefix to use for the binary dump (by default a random UUID4 hex)",
     )
     group.addoption(
         "--hide-memray-summary",

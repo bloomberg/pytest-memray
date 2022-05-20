@@ -92,6 +92,7 @@ MEMORY PROBLEMS demo/test_ok.py::test_memory_exceed
 - `--hide-memray-summary` - hide the memray summary at the end of the execution
 - `--memray-bin-path` - path where to write the memray binary dumps (by default a
   temporary folder)
+- `--memray-bin-prefix` - prefix to use for the binary dump (by default a random UUID4 hex)
 
 ## Configuration - INI
 

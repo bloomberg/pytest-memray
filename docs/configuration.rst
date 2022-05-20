@@ -18,6 +18,9 @@ The complete list of command line options is:
   ``--memray-bin-path``
     Path where to write the memray binary dumps (by default a temporary folder).
 
+  ``--memray-bin-prefix``
+    Prefix to use for the binary dump (by default a random UUID4 hex)
+
 .. tab:: Config file options
 
   ``memray(bool)``
