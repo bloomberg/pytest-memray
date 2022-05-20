@@ -257,9 +257,8 @@ def pytest_addoption(parser: Parser) -> None:
         "Hide the memray summary at the end of the execution",
         type="bool",
     )
-    parser.addini(
-        "most_allocations", "Show the N tests that allocate most memory (N=0 for all)"
-    )
+    help_msg = "Show the N tests that allocate most memory (N=0 for all)"
+    parser.addini("most_allocations", help_msg)
 
 
 def value_or_ini(config: Config, key: str) -> object:
