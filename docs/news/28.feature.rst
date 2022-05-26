@@ -1,0 +1,3 @@
+Allow specifying the prefix used for ``-memray-bin-path`` dumps via the
+``-memray-bin-prefix`` (and if specified and file already exists will be recreated) -
+by :user:`gaborbernat`.

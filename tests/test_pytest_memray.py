@@ -341,3 +341,30 @@ def test_bin_path(pytester: Pytester) -> None:
         "H-magic-test_a.py-test_a.bin",
         "H-magic-test_a.py-test_b[1].bin",
     }
+
+    output = result.stdout.str()
+    assert f"Created 3 binary dumps at {dump} with prefix H" in output
+
+
+@pytest.mark.parametrize("override", [True, False])
+def test_bin_path_prefix(pytester: Pytester, override: bool) -> None:
+    py = """
+    import pytest
+    def test_t():
+        assert [1]
+    """
+    pytester.makepyfile(test_a=py)
+
+    bin_path = pytester.path / "p-test_a.py-test_t.bin"
+    if override:
+        bin_path.write_bytes(b"")
+
+    args = ["--memray", "--memray-bin-path", str(pytester.path)]
+    args.extend(["--memray-bin-prefix", "p"])
+    result = pytester.runpytest(*args)
+    res = list(pytester.path.iterdir())
+
+    assert res
+
+    assert result.ret == ExitCode.OK
+    assert bin_path.exists()
