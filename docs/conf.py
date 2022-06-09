@@ -26,8 +26,8 @@ html_theme_options = {
     "sidebar_hide_name": True,
 }
 extlinks = {
-    "user": ("https://github.com/%s", "@"),
-    "issue": ("https://github.com/bloomberg/pytest-memray/issue/%s", "#"),
+    "user": ("https://github.com/%s", "@%s"),
+    "issue": ("https://github.com/bloomberg/pytest-memray/issue/%s", "#%s"),
 }
 programoutput_prompt_template = "$ pytest --memray /w/demo \n{output}"
 prev = Command.get_output
