@@ -5,6 +5,22 @@ Release History
 
 .. towncrier release notes start
 
+v1.2.0 (2022-05-26)
+-------------------
+
+Features - 1.2.0
+~~~~~~~~~~~~~~~~
+- Allow specifying the prefix used for ``-memray-bin-path`` dumps via the
+  ``-memray-bin-prefix`` (and if specified and file already exists will be recreated) -
+  by :user:`gaborbernat`. (:issue:`28`)
+
+Improved Documentation - 1.2.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Fix documentation links to point from Gitub Pages to readthedocs.org - by :user:`gaborbernat`. (:issue:`12`)
+- Update examples in configuration and add ``-memray-bin-path`` - by :user:`gaborbernat`. (:issue:`26`)
+- Fix minimum python version in documentation from 3.7 to 3.8 - by :user:`ChaoticRoman`. (:issue:`30`)
+
+
 v1.1.0 (2022-05-17)
 -------------------
 

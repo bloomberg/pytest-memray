@@ -15,8 +15,8 @@ pytest-memray is a pytest plugin for easy integration of
 
 ## Installation
 
-pytest-memray requires Python 3.8 or higher and can be easily installed using most common
-Python packaging tools. We recommend installing the latest stable release from
+pytest-memray requires Python 3.8 or higher and can be easily installed using most
+common Python packaging tools. We recommend installing the latest stable release from
 [PyPI](https://pypi.org/project/pytest-memray/) with pip:
 
 ```shell
@@ -92,7 +92,8 @@ MEMORY PROBLEMS demo/test_ok.py::test_memory_exceed
 - `--hide-memray-summary` - hide the memray summary at the end of the execution
 - `--memray-bin-path` - path where to write the memray binary dumps (by default a
   temporary folder)
-- `--memray-bin-prefix` - prefix to use for the binary dump (by default a random UUID4 hex)
+- `--memray-bin-prefix` - prefix to use for the binary dump (by default a random UUID4
+  hex)
 
 ## Configuration - INI
 

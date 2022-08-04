@@ -13,15 +13,16 @@ concurrency:
 jobs:
   test:
     name: test ${{ matrix.tox_env }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {"py": "3.10", "tox_env": "py310-cov"}
-          - {"py": "3.10", "tox_env": "py310"}
-          - {"py": "3.9", "tox_env": "py39"}
-          - {"py": "3.8", "tox_env": "py38"}
+          - { "py": "3.11.0-rc.1", "tox_env": "py311-cov" }
+          - { "py": "3.10", "tox_env": "py310-cov" }
+          - { "py": "3.10", "tox_env": "py310" }
+          - { "py": "3.9", "tox_env": "py39" }
+          - { "py": "3.8", "tox_env": "py38" }
     steps:
       - name: setup python for tox
         uses: actions/setup-python@v4
@@ -41,7 +42,7 @@ jobs:
 
   check:
     name: check ${{ matrix.tox_env }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
