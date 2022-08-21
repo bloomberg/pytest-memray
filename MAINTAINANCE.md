@@ -14,4 +14,5 @@ Information useful for the maintainers of the project.
 
    commit it and create a PR.
 
-2. After merging the PR from step 1 cut a release on the GitHub release page with same version.
+2. After merging the PR from step 1 cut a release on the GitHub release page with same
+   version.

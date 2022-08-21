@@ -1,1 +1,0 @@
-Fix minimum python version in documentation from 3.7 to 3.8 - by :user:`ChaoticRoman`.

@@ -1,1 +1,0 @@
-Update examples in configuration and add ``-memray-bin-path`` - by :user:`gaborbernat`.
