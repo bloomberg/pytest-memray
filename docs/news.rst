@@ -5,6 +5,14 @@ Release History
 
 .. towncrier release notes start
 
+v1.3.0 (2022-08-21)
+-------------------
+
+Features - 1.3.0
+~~~~~~~~~~~~~~~~
+- Ensure Python 3.11 support - by :user:`gaborbernat`. (:issue:`18`)
+
+
 v1.2.0 (2022-05-26)
 -------------------
 
