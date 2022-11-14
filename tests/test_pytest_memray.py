@@ -368,3 +368,24 @@ def test_bin_path_prefix(pytester: Pytester, override: bool) -> None:
 
     assert result.ret == ExitCode.OK
     assert bin_path.exists()
+
+
+def test_plugin_works_with_the_flaky_plugin(pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        from flaky import flaky
+
+        @flaky
+        def test_hello_world():
+            1/0
+        """
+    )
+
+    with patch("pytest_memray.plugin.Tracker") as mock:
+        result = pytester.runpytest("--memray")
+
+    # Ensure that flaky has only called our Tracker once per retry (2 times)
+    # and not more times because it has incorrectly wrapped our plugin and
+    # called it multiple times per retry.
+    assert mock.call_count == 2
+    assert result.ret == ExitCode.TESTS_FAILED
