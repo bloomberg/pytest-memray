@@ -39,7 +39,8 @@ optional-dependencies.lint = [
 optional-dependencies.test = [
   "covdefaults>=2.2",
   "pytest>=7.1.2",
-  "coverage>=6.4.4"
+  "coverage>=6.4.4",
+  "flaky>=3.7.0",
 ]
 dynamic = ["version"]
 classifiers = [

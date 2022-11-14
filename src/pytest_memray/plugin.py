@@ -117,14 +117,21 @@ class Manager:
 
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> object | None:
-            result_file = _build_bin_path()
-            with Tracker(result_file):
-                result: object | None = func(*args, **kwargs)
             try:
-                metadata = FileReader(result_file).metadata
-            except OSError:
-                return None
-            self.results[pyfuncitem.nodeid] = Result(metadata, result_file)
+                result_file = _build_bin_path()
+                with Tracker(result_file):
+                    result: object | None = func(*args, **kwargs)
+                try:
+                    metadata = FileReader(result_file).metadata
+                except OSError:
+                    return None
+                self.results[pyfuncitem.nodeid] = Result(metadata, result_file)
+            finally:
+                # Restore the original function. This is needed because some
+                # pytest plugins (e.g. flaky) will call our pytest_pyfunc_call
+                # hook again with whatever is here, which will cause the wrapper
+                # to be wrapped again.
+                pyfuncitem.obj = func
             return result
 
         pyfuncitem.obj = wrapper
