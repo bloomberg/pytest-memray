@@ -181,12 +181,12 @@ def test_memray_report(pytester: Pytester) -> None:
 
     assert "results for test_memray_report.py::test_foo" in output
     assert "Total memory allocated: 2.0KiB" in output
-    assert "valloc:src/memray/_memray_test_utils.pyx" in output
+    assert "valloc:" in output
     assert "-> 2.0KiB" in output
 
     assert "results for test_memray_report.py::test_bar" in output
     assert "Total memory allocated: 1.0KiB" in output
-    assert "valloc:src/memray/_memray_test_utils.pyx" in output
+    assert "valloc:" in output
     assert "-> 1.0KiB" in output
 
 
@@ -223,12 +223,12 @@ def test_memray_report_is_not_shown_if_deactivated(pytester: Pytester) -> None:
 
     assert "results for test_memray_report.py::test_foo" not in output
     assert "Total memory allocated: 2.0KiB" not in output
-    assert "valloc:src/memray/_memray.pyx" not in output
+    assert "valloc:" not in output
     assert "-> 2.0KiB" not in output
 
     assert "results for test_memray_report.py::test_bar" not in output
     assert "Total memory allocated: 1.0KiB" not in output
-    assert "valloc:src/memray/_memray.pyx" not in output
+    assert "valloc:" not in output
     assert "-> 1.0KiB" not in output
 
 
