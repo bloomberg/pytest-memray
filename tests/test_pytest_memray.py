@@ -340,6 +340,7 @@ def test_bin_path(pytester: Pytester) -> None:
         "H-magic-test_a.py-test_b[2].bin",
         "H-magic-test_a.py-test_a.bin",
         "H-magic-test_a.py-test_b[1].bin",
+        "metadata",
     }
 
     output = result.stdout.str()
@@ -389,3 +390,82 @@ def test_plugin_works_with_the_flaky_plugin(pytester: Pytester) -> None:
     # called it multiple times per retry.
     assert mock.call_count == 2
     assert result.ret == ExitCode.TESTS_FAILED
+
+
+def test_memray_report_with_pytest_xdist(pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        def allocating_func1():
+            allocator.valloc(1024)
+            allocator.free()
+
+        def allocating_func2():
+            allocator.valloc(1024*2)
+            allocator.free()
+
+        def test_foo():
+            allocating_func1()
+
+        def test_bar():
+            allocating_func2()
+        """
+    )
+
+    result = pytester.runpytest("--memray", "-n", "2")
+
+    assert result.ret == ExitCode.OK
+
+    output = result.stdout.str()
+
+    assert "MEMRAY REPORT" in output
+
+    # We don't check the exact number of memory allocated because pytest-xdist
+    # can spawn some threads using the `execnet` library which can allocate extra
+    # memory.
+    assert "Total memory allocated:" in output
+
+    assert "results for test_memray_report_with_pytest_xdist.py::test_foo" in output
+    assert "valloc:" in output
+    assert "-> 2.0KiB" in output
+
+    assert "results for test_memray_report_with_pytest_xdist.py::test_bar" in output
+    assert "valloc:" in output
+    assert "-> 1.0KiB" in output
+
+
+@pytest.mark.parametrize(
+    "size, outcome",
+    [
+        (1024 * 5, ExitCode.TESTS_FAILED),
+        (1024 * 2, ExitCode.TESTS_FAILED),
+        (1024 * 2 - 1, ExitCode.OK),
+        (1024 * 1, ExitCode.OK),
+    ],
+)
+def test_limit_memory_marker_with_pytest_xdist(
+    pytester: Pytester, size: int, outcome: ExitCode
+) -> None:
+    pytester.makepyfile(
+        f"""
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        @pytest.mark.limit_memory("2KB")
+        def test_memory_alloc_fails():
+            allocator.valloc({size})
+            allocator.free()
+
+        @pytest.mark.limit_memory("2KB")
+        def test_memory_alloc_fails_2():
+            allocator.valloc({size})
+            allocator.free()
+        """
+    )
+
+    result = pytester.runpytest("--memray", "-n", "2")
+    assert result.ret == outcome
