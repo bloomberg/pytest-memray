@@ -41,6 +41,7 @@ optional-dependencies.test = [
   "pytest>=7.1.2",
   "coverage>=6.4.4",
   "flaky>=3.7.0",
+  "pytest-xdist>=3",
 ]
 dynamic = ["version"]
 classifiers = [

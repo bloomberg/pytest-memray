@@ -5,6 +5,7 @@ import functools
 import inspect
 import math
 import os
+import pickle
 import uuid
 from dataclasses import dataclass
 from itertools import islice
@@ -76,6 +77,7 @@ ResultElement = List[Tuple[object, int]]
 
 @dataclass
 class Result:
+    test_id: str
     metadata: Metadata
     result_file: Path
 
@@ -85,19 +87,36 @@ class Manager:
         self.results: dict[str, Result] = {}
         self.config = config
         path: Path | None = config.getvalue("memray_bin_path")
+        self._tmp_dir: None | TemporaryDirectory[str] = None
         if path is None:
-            self._tmp_dir: None | TemporaryDirectory[str] = TemporaryDirectory()
-            self.result_path: Path = Path(self._tmp_dir.name)
+            # Check the MEMRAY_RESULT_PAtH environment variable. If this
+            # is set, it means that we are running in a worker and the main
+            # process has set it so we'll use it as the directory to store
+            # the results.
+            result_path = os.getenv("MEMRAY_RESULT_PATH")
+            if not result_path:
+                # We are not running in a worker, so we'll create a temporary
+                # directory to store the results. Other possible workers will
+                # use this directory by reading the MEMRAY_RESULT_PATH environment
+                # variable.
+                self._tmp_dir = TemporaryDirectory()
+                os.environ["MEMRAY_RESULT_PATH"] = self._tmp_dir.name
+                result_path = self._tmp_dir.name
+            self.result_path: Path = Path(result_path)
         else:
             self._tmp_dir = None
             self.result_path = path
         self._bin_prefix = config.getvalue("memray_bin_prefix") or uuid.uuid4().hex
+        self.result_metadata_path = self.result_path / "metadata"
+        self.result_metadata_path.mkdir(exist_ok=True, parents=True)
 
     @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
     def pytest_unconfigure(self, config: Config) -> Generator[None, None, None]:
         yield
         if self._tmp_dir is not None:
             self._tmp_dir.cleanup()
+        if os.environ.get("MEMRAY_RESULT_PATH"):
+            del os.environ["MEMRAY_RESULT_PATH"]
 
     @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
     def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
@@ -125,7 +144,14 @@ class Manager:
                     metadata = FileReader(result_file).metadata
                 except OSError:
                     return None
-                self.results[pyfuncitem.nodeid] = Result(metadata, result_file)
+                result = Result(pyfuncitem.nodeid, metadata, result_file)
+                metadata_path = (
+                    self.result_metadata_path
+                    / result_file.with_suffix(".metadata").name
+                )
+                with open(metadata_path, "wb") as file_handler:
+                    pickle.dump(result, file_handler)
+                self.results[pyfuncitem.nodeid] = result
             finally:
                 # Restore the original function. This is needed because some
                 # pytest plugins (e.g. flaky) will call our pytest_pyfunc_call
@@ -188,6 +214,15 @@ class Manager:
 
         terminalreporter.write_line("")
         terminalreporter.write_sep("=", "MEMRAY REPORT")
+
+        if not self.results:
+            # If there are not results is because we are likely running under
+            # pytest-xdist, and the master process is not running the tests.  In
+            # this case, we can retrieve the results from the metadata directory
+            # instead, that is common for all workers.
+            for result_file in self.result_metadata_path.glob("*.metadata"):
+                result = pickle.loads(result_file.read_bytes())
+                self.results[result.test_id] = result
 
         total_sizes = collections.Counter(
             {
