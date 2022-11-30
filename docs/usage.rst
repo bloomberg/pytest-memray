@@ -60,4 +60,4 @@ Example of usage:
 
     @pytest.mark.limit_memory("24 MB")
     def test_foobar():
-        pass # do some stuff that allocates memory
+        pass  # do some stuff that allocates memory

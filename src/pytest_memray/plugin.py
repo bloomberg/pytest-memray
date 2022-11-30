@@ -184,7 +184,7 @@ class Manager:
                 continue
             reader = FileReader(result.result_file)
             func = reader.get_high_watermark_allocation_records
-            allocations = list((func(merge_threads=True)))
+            allocations = list(func(merge_threads=True))
             res = marker_fn(*marker.args, **marker.kwargs, _allocations=allocations)
             if res:
                 report.outcome = "failed"
