@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 from types import SimpleNamespace
+from unittest.mock import ANY
 from unittest.mock import patch
 
 import pytest
+from memray import Tracker
 from pytest import ExitCode
 from pytest import Pytester
 
@@ -146,6 +148,67 @@ def test_memray_with_junit_xml(pytester: Pytester) -> None:
     path = str(pytester.path / "blech.xml")
     result = pytester.runpytest("--memray", "--junit-xml", path)
     assert result.ret == ExitCode.TESTS_FAILED
+
+
+@pytest.mark.parametrize("num_stacks", [1, 5, 100])
+def test_memray_report_limit_number_stacks(num_stacks: int, pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        def rec(n):
+            if n <= 1:
+                allocator.valloc(1024*2)
+                allocator.free()
+                return None
+            return rec(n - 1)
+
+
+        @pytest.mark.limit_memory("1kb")
+        def test_foo():
+            rec(10)
+    """
+    )
+
+    result = pytester.runpytest("--memray", f"--stacks={num_stacks}")
+
+    assert result.ret == ExitCode.TESTS_FAILED
+
+    output = result.stdout.str()
+
+    assert "valloc:" in output
+    assert output.count("rec:") == min(num_stacks - 1, 10)
+
+
+@pytest.mark.parametrize("native", [True, False])
+def test_memray_report_native(native: bool, pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        @pytest.mark.limit_memory("1kb")
+        def test_foo():
+            allocator.valloc(1024*2)
+            allocator.free()
+    """
+    )
+
+    with patch("pytest_memray.plugin.Tracker", wraps=Tracker) as mock:
+        result = pytester.runpytest("--memray", *(["--native"] if native else []))
+
+    assert result.ret == ExitCode.TESTS_FAILED
+
+    output = result.stdout.str()
+    mock.assert_called_once_with(ANY, native_traces=native)
+
+    if native:
+        assert "MemoryAllocator_1" in output
+    else:
+        assert "MemoryAllocator_1" not in output
 
 
 def test_memray_report(pytester: Pytester) -> None:

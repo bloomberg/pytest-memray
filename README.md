@@ -94,12 +94,16 @@ MEMORY PROBLEMS demo/test_ok.py::test_memory_exceed
   temporary folder)
 - `--memray-bin-prefix` - prefix to use for the binary dump (by default a random UUID4
   hex)
+--stacks=STACKS - Show the N stack entries when showing tracebacks of memory allocations
+--native - Show native frames when showing tracebacks of memory allocations (will be slower)
 
 ## Configuration - INI
 
 - `memray(bool)` - activate memray tracking
 - `most-allocations(string)` - show the N tests that allocate most memory (N=0 for all)
 - `hide_memray_summary(bool)` - hide the memray summary at the end of the execution
+- `stacks(int)` - Show the N stack entries when showing tracebacks of memory allocations
+- `native(bool)`- Show native frames when showing tracebacks of memory allocations (will be slower)
 
 ## License
 

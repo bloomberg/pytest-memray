@@ -35,7 +35,9 @@ from pytest import hookimpl
 
 from .marks import limit_memory
 from .utils import WriteEnabledDirectoryAction
+from .utils import positive_int
 from .utils import sizeof_fmt
+from .utils import value_or_ini
 
 MARKERS = {"limit_memory": limit_memory}
 
@@ -134,11 +136,13 @@ class Manager:
                 result_file.unlink()
             return result_file
 
+        native: bool = bool(value_or_ini(self.config, "native"))
+
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> object | None:
             try:
                 result_file = _build_bin_path()
-                with Tracker(result_file):
+                with Tracker(result_file, native_traces=native):
                     result: object | None = func(*args, **kwargs)
                 try:
                     metadata = FileReader(result_file).metadata
@@ -184,8 +188,13 @@ class Manager:
                 continue
             reader = FileReader(result.result_file)
             func = reader.get_high_watermark_allocation_records
-            allocations = list(func(merge_threads=True))
-            res = marker_fn(*marker.args, **marker.kwargs, _allocations=allocations)
+            allocations = list((func(merge_threads=True)))
+            res = marker_fn(
+                *marker.args,
+                **marker.kwargs,
+                _allocations=allocations,
+                _config=self.config,
+            )
             if res:
                 report.outcome = "failed"
                 report.longrepr = res.long_repr
@@ -309,6 +318,19 @@ def pytest_addoption(parser: Parser) -> None:
         default=5,
         help="Show the N tests that allocate most memory (N=0 for all)",
     )
+    group.addoption(
+        "--stacks",
+        type=positive_int,
+        default=1,
+        help="Show the N stack entries when showing tracebacks of memory allocations",
+    )
+    group.addoption(
+        "--native",
+        action="store_true",
+        default=False,
+        help="Show native frames when showing tracebacks of memory allocations "
+        "(will be slower)",
+    )
 
     parser.addini("memray", "Activate pytest.ini setting", type="bool")
     parser.addini(
@@ -316,12 +338,19 @@ def pytest_addoption(parser: Parser) -> None:
         "Hide the memray summary at the end of the execution",
         type="bool",
     )
+    parser.addini(
+        "stacks",
+        help="Show the N stack entries when showing tracebacks of memory allocations",
+        type="string",
+    )
+    parser.addini(
+        "native",
+        help="Show native frames when showing tracebacks of memory allocations "
+        "(will be slower)",
+        type="bool",
+    )
     help_msg = "Show the N tests that allocate most memory (N=0 for all)"
     parser.addini("most_allocations", help_msg)
-
-
-def value_or_ini(config: Config, key: str) -> object:
-    return config.getvalue(key) or config.getini(key)
 
 
 def pytest_configure(config: Config) -> None:
