@@ -5,13 +5,27 @@ Release History
 
 .. towncrier release notes start
 
+v1.3.2 (2022-11-30)
+-------------------
+
+Bug Fixes - 1.3.2
+~~~~~~~~~~~~~~~~~
+- Make the plugin compatible with ``pytest-xdist``
+
+v1.3.1 (2022-11-14)
+-------------------
+
+Bug Fixes - 1.3.1
+~~~~~~~~~~~~~~~~~
+- Declare 3.11 support
+- Fix incompatibility with the ``flaky`` plugin
+
 v1.3.0 (2022-08-21)
 -------------------
 
 Features - 1.3.0
 ~~~~~~~~~~~~~~~~
 - Ensure Python 3.11 support - by :user:`gaborbernat`. (:issue:`18`)
-
 
 v1.2.0 (2022-05-26)
 -------------------
@@ -27,7 +41,6 @@ Improved Documentation - 1.2.0
 - Fix documentation links to point from Gitub Pages to readthedocs.org - by :user:`gaborbernat`. (:issue:`12`)
 - Update examples in configuration and add ``-memray-bin-path`` - by :user:`gaborbernat`. (:issue:`26`)
 - Fix minimum python version in documentation from 3.7 to 3.8 - by :user:`ChaoticRoman`. (:issue:`30`)
-
 
 v1.1.0 (2022-05-17)
 -------------------
