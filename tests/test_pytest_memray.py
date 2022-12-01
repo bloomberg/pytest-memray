@@ -79,7 +79,7 @@ def test_limit_memory_marker(pytester: Pytester, size: int, outcome: ExitCode) -
     assert result.ret == outcome
 
 
-def test_limit_memory_marker_does_not_work_if_memray_inactive(
+def test_limit_memory_marker_does_work_if_memray_not_passed(
     pytester: Pytester,
 ) -> None:
     pytester.makepyfile(
@@ -97,7 +97,7 @@ def test_limit_memory_marker_does_not_work_if_memray_inactive(
 
     result = pytester.runpytest()
 
-    assert result.ret == ExitCode.OK
+    assert result.ret == ExitCode.TESTS_FAILED
 
 
 @pytest.mark.parametrize(

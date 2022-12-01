@@ -122,6 +122,16 @@ class Manager:
     def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
         func = pyfuncitem.obj
 
+        markers = {
+            marker.name
+            for marker in pyfuncitem.iter_markers()
+            if marker.name in MARKERS
+        }
+
+        if not markers and not value_or_ini(self.config, "memray"):
+            yield
+            return
+
         def _build_bin_path() -> Path:
             if self._tmp_dir is None:
                 of_id = pyfuncitem.nodeid.replace("::", "-")
@@ -209,7 +219,9 @@ class Manager:
     def pytest_terminal_summary(
         self, terminalreporter: TerminalReporter, exitstatus: ExitCode
     ) -> None:
-        if value_or_ini(self.config, "hide_memray_summary"):
+        if value_or_ini(self.config, "hide_memray_summary") or not value_or_ini(
+            self.config, "memray"
+        ):
             return
 
         terminalreporter.write_line("")
@@ -325,8 +337,6 @@ def value_or_ini(config: Config, key: str) -> object:
 
 
 def pytest_configure(config: Config) -> None:
-    if not value_or_ini(config, "memray"):
-        return
     pytest_memray = Manager(config)
     config.pluginmanager.register(pytest_memray, "memray_manager")
 
