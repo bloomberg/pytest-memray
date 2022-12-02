@@ -1,1 +1,0 @@
-Allow to run tests marked with memray markers without having to provide "--memray" in the command line.
