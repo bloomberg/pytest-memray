@@ -1,0 +1,1 @@
+Fix pytest raising ``pytest.PytestReturnNotNoneWarning`` from test decorated with memray markers.

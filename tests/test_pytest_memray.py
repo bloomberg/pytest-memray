@@ -532,3 +532,20 @@ def test_limit_memory_marker_with_pytest_xdist(
 
     result = pytester.runpytest("--memray", "-n", "2")
     assert result.ret == outcome
+
+
+def test_memray_does_not_raise_warnings(pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        @pytest.mark.limit_memory("1MB")
+        def test_memory_alloc_fails():
+            allocator.valloc(1234)
+            allocator.free()
+        """
+    )
+    result = pytester.runpytest("-Werror", "--memray")
+    assert result.ret == ExitCode.OK
