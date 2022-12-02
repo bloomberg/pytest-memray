@@ -5,6 +5,19 @@ Release History
 
 .. towncrier release notes start
 
+v1.4.0 (2022-12-02)
+-------------------
+
+Features - 1.4.0
+~~~~~~~~~~~~~~~~
+- Allow to run tests marked with memray markers without having to provide "--memray" in the command line. (:issue:`57`)
+- Add two new options that allow to customize the ammount of frames in allocation tracebacks as well as including hybrid stack traces. (:issue:`58`)
+
+Bug Fixes - 1.4.0
+~~~~~~~~~~~~~~~~~
+- Fix pytest raising ``pytest.PytestReturnNotNoneWarning`` from test decorated with memray markers. (:issue:`60`)
+
+
 v1.3.2 (2022-11-30)
 -------------------
 
