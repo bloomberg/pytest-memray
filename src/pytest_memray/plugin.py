@@ -150,10 +150,11 @@ class Manager:
 
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> object | None:
+            test_result: object | Any = None
             try:
                 result_file = _build_bin_path()
                 with Tracker(result_file, native_traces=native):
-                    result: object | None = func(*args, **kwargs)
+                    test_result = func(*args, **kwargs)
                 try:
                     metadata = FileReader(result_file).metadata
                 except OSError:
@@ -172,7 +173,7 @@ class Manager:
                 # hook again with whatever is here, which will cause the wrapper
                 # to be wrapped again.
                 pyfuncitem.obj = func
-            return result
+            return test_result
 
         pyfuncitem.obj = wrapper
         yield
