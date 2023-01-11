@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Tuple
-from typing import cast
+from typing import TYPE_CHECKING, Tuple, cast
 
-from memray import AllocationRecord
-from pytest import Config
+from .utils import parse_memory_string, sizeof_fmt, value_or_ini
 
-from .utils import parse_memory_string
-from .utils import sizeof_fmt
-from .utils import value_or_ini
+if TYPE_CHECKING:
+    import pytest
+    from memray import AllocationRecord
 
 PytestSection = Tuple[str, str]
 
@@ -62,7 +60,10 @@ class _MemoryInfo:
 
 
 def limit_memory(
-    limit: str, *, _allocations: list[AllocationRecord], _config: Config
+    limit: str,
+    *,
+    _allocations: list[AllocationRecord],
+    _config: pytest.Config,
 ) -> _MemoryInfo | None:
     """Limit memory used by the test."""
     max_memory = parse_memory_string(limit)
@@ -72,7 +73,11 @@ def limit_memory(
     num_stacks: int = cast(int, value_or_ini(_config, "stacks"))
     native_stacks: bool = cast(bool, value_or_ini(_config, "native"))
     return _MemoryInfo(
-        max_memory, total_allocated_memory, _allocations, num_stacks, native_stacks
+        max_memory,
+        total_allocated_memory,
+        _allocations,
+        num_stacks,
+        native_stacks,
     )
 
 

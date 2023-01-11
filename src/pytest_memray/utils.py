@@ -3,18 +3,17 @@ from __future__ import annotations
 import argparse
 import os
 import re
-from argparse import Action
-from argparse import ArgumentParser
-from argparse import Namespace
+from argparse import Action, ArgumentParser, Namespace
 from pathlib import Path
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
-from pytest import Config
+if TYPE_CHECKING:
+    import pytest
 
 
 def sizeof_fmt(num: int | float, suffix: str = "B") -> str:
     for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
-        if abs(num) < 1024.0:
+        if abs(num) < 1024.0:  # noqa: PLR2004
             return f"{num:3.1f}{unit}{suffix}"
         num /= 1024.0
     return f"{num:.1f}{'Yi'}{suffix}"
@@ -41,12 +40,13 @@ UNIT_TO_MULTIPLIER = {
 def parse_memory_string(mem_str: str) -> float:
     match = UNIT_REGEXP.match(mem_str)
     if not match:
-        raise ValueError(f"Invalid memory size format: {mem_str}")
+        msg = f"Invalid memory size format: {mem_str}"
+        raise ValueError(msg)
     quantity, unit = match.groups()
     return float(quantity) * UNIT_TO_MULTIPLIER[unit.upper()]
 
 
-def value_or_ini(config: Config, key: str) -> object:
+def value_or_ini(config: pytest.Config, key: str) -> object:
     value = config.getvalue(key)
     if value:
         return value
@@ -62,9 +62,9 @@ class WriteEnabledDirectoryAction(Action):
         parser: ArgumentParser,
         namespace: Namespace,
         values: str | Sequence[str] | None,
-        option_string: str | None = None,
+        option_string: str | None = None,  # noqa: ARG002
     ) -> None:
-        assert isinstance(values, str)
+        assert isinstance(values, str)  # noqa: S101
         folder = Path(values).absolute()
         if folder.exists():
             if folder.is_dir():
@@ -83,7 +83,8 @@ class WriteEnabledDirectoryAction(Action):
 def positive_int(value: str) -> int:
     the_int = int(value)
     if the_int <= 0:
-        raise argparse.ArgumentTypeError(f"{value} is an invalid positive int value")
+        msg = f"{value} is an invalid positive int value"
+        raise argparse.ArgumentTypeError(msg)
     return the_int
 
 

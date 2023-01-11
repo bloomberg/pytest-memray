@@ -13,7 +13,7 @@ concurrency:
 jobs:
   test:
     name: test ${{ matrix.tox_env }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -42,7 +42,7 @@ jobs:
 
   check:
     name: check ${{ matrix.tox_env }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:

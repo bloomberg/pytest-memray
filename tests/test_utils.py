@@ -1,24 +1,19 @@
 from __future__ import annotations
 
 import re
-from argparse import ArgumentParser
-from argparse import Namespace
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
-from stat import S_IWGRP
-from stat import S_IWOTH
-from stat import S_IWUSR
-from typing import Callable
-from typing import NoReturn
+from stat import S_IWGRP, S_IWOTH, S_IWUSR
+from typing import Callable, NoReturn
 from unittest.mock import create_autospec
 
 import pytest
 
-from pytest_memray.utils import WriteEnabledDirectoryAction
-from pytest_memray.utils import parse_memory_string
+from pytest_memray.utils import WriteEnabledDirectoryAction, parse_memory_string
 
 
 @pytest.mark.parametrize(
-    "the_str, expected",
+    ("the_str", "expected"),
     [
         ("100 B", 100),
         ("100B", 100),
@@ -62,7 +57,7 @@ def test_parse_memory_string(the_str: str, expected: float) -> None:
     ],
 )
 def test_parse_incorrect_memory_string(the_str: str) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=re.escape(the_str)):
         parse_memory_string(the_str)
 
 
@@ -112,7 +107,8 @@ def test_write_enabled_dir_read_only(w_dir_check: WDirCheck, tmp_path: Path) -> 
 
 
 def test_write_enabled_dir_cannot_create(
-    w_dir_check: WDirCheck, tmp_path: Path
+    w_dir_check: WDirCheck,
+    tmp_path: Path,
 ) -> None:
     path = tmp_path / "d"
     write = S_IWUSR | S_IWGRP | S_IWOTH

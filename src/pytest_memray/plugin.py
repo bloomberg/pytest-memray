@@ -11,33 +11,16 @@ from dataclasses import dataclass
 from itertools import islice
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any
-from typing import Generator
-from typing import Iterable
-from typing import List
-from typing import Tuple
-from typing import cast
+from typing import TYPE_CHECKING, Any, Generator, Iterable, List, Tuple, cast
 
-from _pytest.terminal import TerminalReporter
-from memray import AllocationRecord
-from memray import FileReader
-from memray import Metadata
-from memray import Tracker
-from pytest import CallInfo
-from pytest import CollectReport
-from pytest import Config
-from pytest import ExitCode
-from pytest import Function
-from pytest import Item
-from pytest import Parser
-from pytest import TestReport
-from pytest import hookimpl
+import pytest
+from memray import AllocationRecord, FileReader, Metadata, Tracker
 
 from .marks import limit_memory
-from .utils import WriteEnabledDirectoryAction
-from .utils import positive_int
-from .utils import sizeof_fmt
-from .utils import value_or_ini
+from .utils import WriteEnabledDirectoryAction, positive_int, sizeof_fmt, value_or_ini
+
+if TYPE_CHECKING:
+    from _pytest.terminal import TerminalReporter
 
 MARKERS = {"limit_memory": limit_memory}
 
@@ -46,9 +29,13 @@ N_HISTOGRAM_BINS = 5
 
 
 def histogram(
-    iterable: Iterable[float], low: float, high: float, bins: int
+    iterable: Iterable[float],
+    low: float,
+    high: float,
+    bins: int,
 ) -> list[int]:
-    """Count elements from the iterable into evenly spaced bins
+    """
+    Count elements from the iterable into evenly spaced bins.
 
     >>> scores = [82, 85, 90, 91, 70, 87, 45]
     >>> histogram(scores, 0, 100, 10)
@@ -70,8 +57,7 @@ def cli_hist(data: Iterable[float], bins: int, *, log_scale: bool = True) -> str
         high = math.log(high)
     data_bins = histogram(data, low=low, high=high, bins=bins)
     bar_indexes = (int(elem * (len(bars) - 1) / max(data_bins)) for elem in data_bins)
-    result = " ".join(bars[bar_index] for bar_index in bar_indexes)
-    return result
+    return " ".join(bars[bar_index] for bar_index in bar_indexes)
 
 
 ResultElement = List[Tuple[object, int]]
@@ -85,7 +71,7 @@ class Result:
 
 
 class Manager:
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: pytest.Config) -> None:
         self.results: dict[str, Result] = {}
         self.config = config
         path: Path | None = config.getvalue("memray_bin_path")
@@ -112,16 +98,19 @@ class Manager:
         self.result_metadata_path = self.result_path / "metadata"
         self.result_metadata_path.mkdir(exist_ok=True, parents=True)
 
-    @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
-    def pytest_unconfigure(self, config: Config) -> Generator[None, None, None]:
+    @pytest.hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
+    def pytest_unconfigure(
+        self,
+        config: pytest.Config,  # noqa: ARG002
+    ) -> Generator[None, None, None]:
         yield
         if self._tmp_dir is not None:
             self._tmp_dir.cleanup()
         if os.environ.get("MEMRAY_RESULT_PATH"):
             del os.environ["MEMRAY_RESULT_PATH"]
 
-    @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
-    def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
+    @pytest.hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
+    def pytest_pyfunc_call(self, pyfuncitem: pytest.Function) -> object | None:
         func = pyfuncitem.obj
 
         markers = {
@@ -164,7 +153,7 @@ class Manager:
                     self.result_metadata_path
                     / result_file.with_suffix(".metadata").name
                 )
-                with open(metadata_path, "wb") as file_handler:
+                with metadata_path.open("wb") as file_handler:
                     pickle.dump(result, file_handler)
                 self.results[pyfuncitem.nodeid] = result
             finally:
@@ -178,10 +167,12 @@ class Manager:
         pyfuncitem.obj = wrapper
         yield
 
-    @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
+    @pytest.hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
     def pytest_runtest_makereport(
-        self, item: Item, call: CallInfo[None]
-    ) -> Generator[None, TestReport | None, TestReport | None]:
+        self,
+        item: pytest.Item,
+        call: pytest.CallInfo[None],
+    ) -> Generator[None, pytest.TestReport | None, pytest.TestReport | None]:
         outcome = yield
         if call.when != "call" or outcome is None:
             return None
@@ -199,7 +190,7 @@ class Manager:
                 continue
             reader = FileReader(result.result_file)
             func = reader.get_high_watermark_allocation_records
-            allocations = list((func(merge_threads=True)))
+            allocations = list(func(merge_threads=True))
             res = marker_fn(
                 *marker.args,
                 **marker.kwargs,
@@ -213,10 +204,11 @@ class Manager:
                 outcome.force_result(report)
         return None
 
-    @hookimpl(hookwrapper=True, trylast=True)  # type: ignore[misc] # Untyped decorator
+    @pytest.hookimpl(hookwrapper=True, trylast=True)  # type: ignore[misc]
     def pytest_report_teststatus(
-        self, report: CollectReport | TestReport
-    ) -> Generator[None, TestReport, None]:
+        self,
+        report: pytest.CollectReport | pytest.TestReport,
+    ) -> Generator[None, pytest.TestReport, None]:
         outcome = yield
         if report.when != "call" or report.outcome != "failed":
             return None
@@ -225,12 +217,15 @@ class Manager:
             outcome.force_result(("failed", "M", "MEMORY PROBLEMS"))
         return None
 
-    @hookimpl  # type: ignore[misc] # Untyped decorator
+    @pytest.hookimpl  # type: ignore[misc] # Untyped decorator
     def pytest_terminal_summary(
-        self, terminalreporter: TerminalReporter, exitstatus: ExitCode
+        self,
+        terminalreporter: TerminalReporter,
+        exitstatus: pytest.ExitCode,  # noqa: ARG002
     ) -> None:
         if value_or_ini(self.config, "hide_memray_summary") or not value_or_ini(
-            self.config, "memray"
+            self.config,
+            "memray",
         ):
             return
 
@@ -243,7 +238,7 @@ class Manager:
             # this case, we can retrieve the results from the metadata directory
             # instead, that is common for all workers.
             for result_file in self.result_metadata_path.glob("*.metadata"):
-                result = pickle.loads(result_file.read_bytes())
+                result = pickle.loads(result_file.read_bytes())  # noqa: S301
                 self.results[result.test_id] = result
 
         total_sizes = collections.Counter(
@@ -251,12 +246,12 @@ class Manager:
                 node_id: result.metadata.peak_memory
                 for node_id, result in self.results.items()
                 if result.result_file.exists()
-            }
+            },
         )
 
         max_results = cast(int, value_or_ini(self.config, "most_allocations"))
 
-        for test_id, total_size in total_sizes.most_common(max_results):
+        for test_id, _total_size in total_sizes.most_common(max_results):
             result = self.results[test_id]
             reader = FileReader(result.result_file)
             func = reader.get_high_watermark_allocation_records
@@ -300,7 +295,7 @@ class Manager:
         writeln("\n")
 
 
-def pytest_addoption(parser: Parser) -> None:
+def pytest_addoption(parser: pytest.Parser) -> None:
     group = parser.getgroup("memray")
     group.addoption(
         "--memray",
@@ -312,7 +307,8 @@ def pytest_addoption(parser: Parser) -> None:
         "--memray-bin-path",
         action=WriteEnabledDirectoryAction,
         default=None,
-        help="Path where to write the memray binary dumps (by default a temporary folder)",
+        help="Path where to write the memray binary dumps "
+        "(by default a temporary folder)",
     )
     group.addoption(
         "--memray-bin-prefix",
@@ -366,7 +362,7 @@ def pytest_addoption(parser: Parser) -> None:
     parser.addini("most_allocations", help_msg)
 
 
-def pytest_configure(config: Config) -> None:
+def pytest_configure(config: pytest.Config) -> None:
     pytest_memray = Manager(config)
     config.pluginmanager.register(pytest_memray, "memray_manager")
 

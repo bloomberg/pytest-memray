@@ -1,12 +1,15 @@
-"""Sphinx configuration file for pytest-memray documentation."""
+"""Sphinx configuration file for pytest-memray documentation."""  # noqa: INP001
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 from subprocess import check_output
+from typing import TYPE_CHECKING
 
-from sphinx.application import Sphinx
 from sphinxcontrib.programoutput import Command
+
+if TYPE_CHECKING:
+    from sphinx.application import Sphinx
 
 extensions = [
     "sphinx.ext.extlinks",
@@ -33,11 +36,11 @@ programoutput_prompt_template = "$ pytest --memray /w/demo \n{output}"
 prev = Command.get_output
 here = Path(__file__).parent
 linkcheck_allowed_redirects = {
-    "https://github.com/bloomberg/pytest-memray/issues/.*": "https://github.com/bloomberg/pytest-memray/pull/.*"
+    "https://github.com/bloomberg/pytest-memray/issues/.*": "https://github.com/bloomberg/pytest-memray/pull/.*",
 }
 
 
-def _get_output(self):
+def _get_output(self: Command) -> tuple[int, str]:
     code, out = prev(self)
     out = out.replace(str(Path(sys.executable).parents[1]), "/v")
     out = out.replace(str(here), "/w")
@@ -47,11 +50,11 @@ def _get_output(self):
 Command.get_output = _get_output
 
 
-def setup(app: Sphinx) -> None:
+def setup(app: Sphinx) -> None:  # noqa: ARG001
     here = Path(__file__).parent
     root, exe = here.parent, Path(sys.executable)
     towncrier = exe.with_name(f"towncrier{exe.suffix}")
     cmd = [str(towncrier), "build", "--draft", "--version", "NEXT"]
-    new = check_output(cmd, cwd=root, text=True)
+    new = check_output(cmd, cwd=root, text=True)  # noqa: S603
     to = root / "docs" / "_draft.rst"
     to.write_text("" if "No significant changes" in new else new)
