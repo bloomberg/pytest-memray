@@ -52,7 +52,7 @@ lint:  ## Lint all files
 
 .PHONY: docs
 docs:  ## Generate documentation
-	sphinx-build docs docs/_build/html --color -W --keep-going -n -bhtml
+	sphinx-build docs docs/_build/html --color -W --keep-going -n -bhtml -b linkcheck -W
 
 .PHONY: clean
 clean:  ## Clean any built/generated artifacts

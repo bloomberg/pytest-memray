@@ -27,11 +27,14 @@ html_theme_options = {
 }
 extlinks = {
     "user": ("https://github.com/%s", "@%s"),
-    "issue": ("https://github.com/bloomberg/pytest-memray/issue/%s", "#%s"),
+    "issue": ("https://github.com/bloomberg/pytest-memray/issues/%s", "#%s"),
 }
 programoutput_prompt_template = "$ pytest --memray /w/demo \n{output}"
 prev = Command.get_output
 here = Path(__file__).parent
+linkcheck_allowed_redirects = {
+    "https://github.com/bloomberg/pytest-memray/issues/.*": "https://github.com/bloomberg/pytest-memray/pull/.*"
+}
 
 
 def _get_output(self):
