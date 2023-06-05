@@ -91,7 +91,7 @@ class Manager:
         path: Path | None = config.getvalue("memray_bin_path")
         self._tmp_dir: None | TemporaryDirectory[str] = None
         if path is None:
-            # Check the MEMRAY_RESULT_PAtH environment variable. If this
+            # Check the MEMRAY_RESULT_PATH environment variable. If this
             # is set, it means that we are running in a worker and the main
             # process has set it so we'll use it as the directory to store
             # the results.
@@ -135,7 +135,7 @@ class Manager:
             return
 
         def _build_bin_path() -> Path:
-            if self._tmp_dir is None:
+            if self._tmp_dir is None and not os.getenv("MEMRAY_RESULT_PATH"):
                 of_id = pyfuncitem.nodeid.replace("::", "-")
                 of_id = of_id.replace(os.sep, "-")
                 name = f"{self._bin_prefix}-{of_id}.bin"
