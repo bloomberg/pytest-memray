@@ -470,7 +470,8 @@ def test_memray_report_with_pytest_xdist(pytester: Pytester) -> None:
             allocator.valloc(1024*2)
             allocator.free()
 
-        def test_foo():
+        @pytest.mark.parametrize("param", [("unused",)], ids=["x" * 1024])
+        def test_foo(param):
             allocating_func1()
 
         def test_bar():
