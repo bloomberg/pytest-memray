@@ -22,7 +22,7 @@ pytest:
 Allocation tracking
 ~~~~~~~~~~~~~~~~~~~
 
-By default, the plugin will track allocations in all tests. This information is
+By default, the plugin will track allocations at the high watermark in all tests. This information is
 reported after tests run ends:
 
 .. command-output:: env COLUMNS=92 pytest --memray demo
