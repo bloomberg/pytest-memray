@@ -282,7 +282,7 @@ class Manager:
         terminalreporter: TerminalReporter,
     ) -> None:
         writeln = terminalreporter.write_line
-        writeln(f"Allocations results for {test_id}")
+        writeln(f"Allocation results for {test_id} at the high watermark")
         writeln("")
         writeln(f"\t 📦 Total memory allocated: {sizeof_fmt(metadata.peak_memory)}")
         writeln(f"\t 📏 Total allocations: {metadata.total_allocations}")
