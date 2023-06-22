@@ -21,6 +21,12 @@ The complete list of command line options is:
   ``--memray-bin-prefix``
     Prefix to use for the binary dump (by default a random UUID4 hex)
 
+  ``--stacks=STACKS``
+    Show the N most recent stack entries when showing tracebacks of memory allocations
+
+  ``--native``
+    Include native frames when showing tracebacks of memory allocations (will be slower)
+
 .. tab:: Config file options
 
   ``memray(bool)``
