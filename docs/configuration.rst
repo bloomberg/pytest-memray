@@ -27,6 +27,9 @@ The complete list of command line options is:
   ``--native``
     Include native frames when showing tracebacks of memory allocations (will be slower)
 
+  ``--trace-python-allocators``
+    Record allocations made by the Pymalloc allocator (will be slower)
+
 .. tab:: Config file options
 
   ``memray(bool)``
@@ -37,3 +40,6 @@ The complete list of command line options is:
 
   ``hide_memray_summary(bool)``
     Hide the memray summary at the end of the execution.
+
+  ``trace_python_allocators(bool)``
+    Record allocations made by the Pymalloc allocator (will be slower)
