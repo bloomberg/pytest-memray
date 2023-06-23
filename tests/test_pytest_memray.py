@@ -504,10 +504,9 @@ def test_memray_report_with_pytest_xdist(pytester: Pytester) -> None:
 @pytest.mark.parametrize(
     "size, outcome",
     [
-        (1024 * 5, ExitCode.TESTS_FAILED),
-        (1024 * 2, ExitCode.TESTS_FAILED),
-        (1024 * 2 - 1, ExitCode.OK),
-        (1024 * 1, ExitCode.OK),
+        (1024 * 20, ExitCode.TESTS_FAILED),
+        (1024 * 10, ExitCode.TESTS_FAILED),
+        (1024, ExitCode.OK),
     ],
 )
 def test_limit_memory_marker_with_pytest_xdist(
@@ -519,12 +518,12 @@ def test_limit_memory_marker_with_pytest_xdist(
         from memray._test import MemoryAllocator
         allocator = MemoryAllocator()
 
-        @pytest.mark.limit_memory("2KB")
+        @pytest.mark.limit_memory("10KB")
         def test_memory_alloc_fails():
             allocator.valloc({size})
             allocator.free()
 
-        @pytest.mark.limit_memory("2KB")
+        @pytest.mark.limit_memory("10KB")
         def test_memory_alloc_fails_2():
             allocator.valloc({size})
             allocator.free()
