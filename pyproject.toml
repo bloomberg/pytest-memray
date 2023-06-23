@@ -32,7 +32,7 @@ optional-dependencies.docs = [
 ]
 optional-dependencies.lint = [
   "black==22.12",
-  "flake8==6",
+  "ruff==0.0.272",
   "isort==5.11.4",
   "mypy==0.991",
 ]
@@ -114,3 +114,13 @@ type = [
   { name = "Improved Documentation", directory = "doc", showcontent = true },
   { name = "Miscellaneous", directory = "misc", showcontent = true },
 ]
+
+[tool.ruff]
+ignore = ['E501']
+line-length = 95
+select = [
+    'E',
+    'F',
+    'W',
+]
+isort = {known-first-party = ["pytest_memray"], required-imports = ["from __future__ import annotations"]}

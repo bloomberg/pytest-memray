@@ -40,13 +40,12 @@ coverage:  ## Run the test suite, with Python code coverage
 
 .PHONY: format
 format:  ## Autoformat all files
-	$(PYTHON) -m isort $(python_files)
+	$(PYTHON) -m ruff --fix $(python_files)
 	$(PYTHON) -m black $(python_files)
 
 .PHONY: lint
 lint:  ## Lint all files
-	$(PYTHON) -m isort --check $(python_files)
-	$(PYTHON) -m flake8 $(python_files)
+	$(PYTHON) -m ruff check $(python_files)
 	$(PYTHON) -m black --check --diff $(python_files)
 	$(PYTHON) -m mypy src/pytest_memray --ignore-missing-imports
 
