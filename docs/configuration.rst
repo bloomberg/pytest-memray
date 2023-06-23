@@ -41,5 +41,11 @@ The complete list of command line options is:
   ``hide_memray_summary(bool)``
     Hide the memray summary at the end of the execution.
 
+  ``stacks(int)``
+    Show the N most recent stack entries when showing tracebacks of memory allocations
+
+  ``native(bool)``
+    Include native frames when showing tracebacks of memory allocations (will be slower)
+
   ``trace_python_allocators(bool)``
     Record allocations made by the Pymalloc allocator (will be slower)
