@@ -203,12 +203,57 @@ def test_memray_report_native(native: bool, pytester: Pytester) -> None:
     assert result.ret == ExitCode.TESTS_FAILED
 
     output = result.stdout.str()
-    mock.assert_called_once_with(ANY, native_traces=native)
+    mock.assert_called_once_with(
+        ANY, native_traces=native, trace_python_allocators=False
+    )
 
     if native:
         assert "MemoryAllocator_1" in output
     else:
         assert "MemoryAllocator_1" not in output
+
+
+@pytest.mark.parametrize("trace_python_allocators", [True, False])
+def test_memray_report_python_allocators(
+    trace_python_allocators: bool, pytester: Pytester
+) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import PymallocMemoryAllocator
+        from memray._test import PymallocDomain
+
+        allocator = PymallocMemoryAllocator(PymallocDomain.PYMALLOC_OBJECT)
+
+        def allocate_with_pymalloc():
+            allocator.malloc(256)
+            allocator.free()
+
+        @pytest.mark.limit_memory("128B")
+        def test_foo():
+            allocate_with_pymalloc()
+    """
+    )
+
+    with patch("pytest_memray.plugin.Tracker", wraps=Tracker) as mock:
+        result = pytester.runpytest(
+            "--memray",
+            *(["--trace-python-allocators"] if trace_python_allocators else []),
+        )
+
+    assert result.ret == (
+        ExitCode.TESTS_FAILED if trace_python_allocators else ExitCode.OK
+    )
+
+    output = result.stdout.str()
+    mock.assert_called_once_with(
+        ANY, native_traces=False, trace_python_allocators=trace_python_allocators
+    )
+
+    if trace_python_allocators:
+        assert "allocate_with_pymalloc" in output
+    else:
+        assert "allocate_with_pymalloc" not in output
 
 
 def test_memray_report(pytester: Pytester) -> None:

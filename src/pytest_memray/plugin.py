@@ -147,13 +147,20 @@ class Manager:
             return result_file
 
         native: bool = bool(value_or_ini(self.config, "native"))
+        trace_python_allocators: bool = bool(
+            value_or_ini(self.config, "trace_python_allocators")
+        )
 
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> object | None:
             test_result: object | Any = None
             try:
                 result_file = _build_bin_path()
-                with Tracker(result_file, native_traces=native):
+                with Tracker(
+                    result_file,
+                    native_traces=native,
+                    trace_python_allocators=trace_python_allocators,
+                ):
                     test_result = func(*args, **kwargs)
                 try:
                     metadata = FileReader(result_file).metadata
@@ -344,6 +351,12 @@ def pytest_addoption(parser: Parser) -> None:
         help="Show native frames when showing tracebacks of memory allocations "
         "(will be slower)",
     )
+    group.addoption(
+        "--trace-python-allocators",
+        action="store_true",
+        default=False,
+        help="Record allocations made by the Pymalloc allocator (will be slower)",
+    )
 
     parser.addini("memray", "Activate pytest.ini setting", type="bool")
     parser.addini(
@@ -360,6 +373,11 @@ def pytest_addoption(parser: Parser) -> None:
         "native",
         help="Show native frames when showing tracebacks of memory allocations "
         "(will be slower)",
+        type="bool",
+    )
+    parser.addini(
+        "trace_python_allocators",
+        help="Record allocations made by the Pymalloc allocator (will be slower)",
         type="bool",
     )
     help_msg = "Show the N tests that allocate most memory (N=0 for all)"

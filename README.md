@@ -96,6 +96,7 @@ MEMORY PROBLEMS demo/test_ok.py::test_memory_exceed
   hex)
 --stacks=STACKS - Show the N stack entries when showing tracebacks of memory allocations
 --native - Show native frames when showing tracebacks of memory allocations (will be slower)
+--trace-python-allocators - Record allocations made by the Pymalloc allocator (will be slower)
 
 ## Configuration - INI
 
@@ -104,6 +105,7 @@ MEMORY PROBLEMS demo/test_ok.py::test_memory_exceed
 - `hide_memray_summary(bool)` - hide the memray summary at the end of the execution
 - `stacks(int)` - Show the N stack entries when showing tracebacks of memory allocations
 - `native(bool)`- Show native frames when showing tracebacks of memory allocations (will be slower)
+- `trace_python_allocators` - Record allocations made by the Pymalloc allocator (will be slower)
 
 ## License
 
