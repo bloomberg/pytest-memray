@@ -94,9 +94,9 @@ MEMORY PROBLEMS demo/test_ok.py::test_memory_exceed
   temporary folder)
 - `--memray-bin-prefix` - prefix to use for the binary dump (by default a random UUID4
   hex)
---stacks=STACKS - Show the N stack entries when showing tracebacks of memory allocations
---native - Show native frames when showing tracebacks of memory allocations (will be slower)
---trace-python-allocators - Record allocations made by the Pymalloc allocator (will be slower)
+- `--stacks=STACKS` - Show the N stack entries when showing tracebacks of memory allocations
+- `--native` - Show native frames when showing tracebacks of memory allocations (will be slower)
+- `--trace-python-allocators` - Record allocations made by the Pymalloc allocator (will be slower)
 
 ## Configuration - INI
 
