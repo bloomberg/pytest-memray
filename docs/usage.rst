@@ -70,7 +70,7 @@ Example of usage:
 ``limit_leaks``
 ---------------
 
-.. py:function:: limit_leaks(location_limit: str, filtering_fn: Callable['LeaksFilteringFunction', bool]=None)
+.. py:function:: limit_leaks(location_limit: str, filtering_fn: LeaksFilteringFunction | None = None)
 
     Fail the execution of the test if any call stack in the test leaks more memory than allowed.
 

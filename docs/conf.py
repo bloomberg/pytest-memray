@@ -48,7 +48,31 @@ def _get_output(self):
 Command.get_output = _get_output
 
 
+def resolve_type_aliases(app, env, node, contnode):
+    """Help Sphinx resolve our type aliases.
+
+    sphinx.ext.autodoc generates ``:attr:`` entries in the index for our type
+    aliases, but then tries to reference those entries using ``:class:``, which
+    fails. This is probably a Sphinx bug, but this hook works around it.
+    """
+    if (
+        node["refdomain"] == "py"
+        and node["reftype"] == "class"
+        and node["reftarget"] in ("LeaksFilteringFunction",)
+    ):
+        return app.env.get_domain("py").resolve_xref(
+            env,
+            node["refdoc"],
+            app.builder,
+            "attr",
+            node["reftarget"],
+            node,
+            contnode,
+        )
+
+
 def setup(app: Sphinx) -> None:
+    app.connect("missing-reference", resolve_type_aliases)
     here = Path(__file__).parent
     root, exe = here.parent, Path(sys.executable)
     towncrier = exe.with_name(f"towncrier{exe.suffix}")
