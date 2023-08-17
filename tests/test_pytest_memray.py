@@ -670,8 +670,8 @@ def test_leak_marker_filtering_function(pytester: Pytester) -> None:
              allocator.valloc(LEAK_SIZE)
              # No free call here
 
-         def filtering_function(locations):
-             for fn, _, _ in locations:
+         def filtering_function(stack):
+             for fn, _, _ in stack.frames:
                  if fn == "this_should_not_be_there":
                      return False
              return True
@@ -721,7 +721,7 @@ def test_multiple_markers_are_not_supported(pytester: Pytester) -> None:
     assert result.ret == ExitCode.TESTS_FAILED
 
     output = result.stdout.str()
-    assert "Only one memray marker can be applied" in output
+    assert "Only one Memray marker can be applied to each test" in output
 
 
 def test_multiple_markers_are_not_supported_with_global_marker(
@@ -741,4 +741,4 @@ def test_multiple_markers_are_not_supported_with_global_marker(
     assert result.ret == ExitCode.TESTS_FAILED
 
     output = result.stdout.str()
-    assert "Only one memray marker can be applied" in output
+    assert "Only one Memray marker can be applied to each test" in output

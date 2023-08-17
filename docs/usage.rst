@@ -41,6 +41,7 @@ validations on tests when this plugin is enabled.
 ----------------
 
 .. py:function:: limit_memory(memory_limit: str)
+
     Fail the execution of the test if the test allocates more memory than allowed
 
 When this marker is applied to a test, it will cause the test to fail if the execution
@@ -69,12 +70,13 @@ Example of usage:
 ``limit_leaks``
 ---------------
 
- .. py:function:: limit_leaks(location_limit: str, filtering_fn: Callable[Iterable[Tuple[str, str, int]], bool])
-       Fail the execution of the test if any location in the test leaks more memory than allowed.
+.. py:function:: limit_leaks(location_limit: str, filtering_fn: Callable['LeaksFilteringFunction', bool]=None)
 
- .. important::
-       To detect leaks, Memray needs to intercept calls to the Python allocators and use native
-       traces. This is adds significant overhead, and will slow your test down.
+    Fail the execution of the test if any call stack in the test leaks more memory than allowed.
+
+.. important::
+   To detect leaks, Memray needs to intercept calls to the Python allocators and use native
+   traces. This is adds significant overhead, and will slow your test down.
 
 When this marker is applied to a test, it will cause the test to fail if any allocation location in
 the execution of the test leaks more memory than allowed. It takes a single positional argument with a
@@ -90,7 +92,7 @@ The format for the string is ``<NUMBER> ([KMGTP]B|B)``. The marker will raise
 ``ValueError`` if the string format cannot be parsed correctly.
 
 The marker also takes an optional keyword-only argument ``filtering_fn``. This argument represents a filtering
-function that will be called with the traceback for every location that allocates memory that cumulatively is
+function that will be called with the traceback for every call stack that allocates memory that cumulatively is
 bigger than the provided limit. The function must return *True* if the allocation must be taken into account
 and *False* otherwise. This function can be used to discard some false positives detected by the marker.
 
@@ -118,9 +120,9 @@ Example of usage:
 .. warning::
    Is **very** challenging to write tests that do not "leak" memory in some way.
    interpreter caches but there are some that cannot be correctly detected so
-   you may need to allow some small amount of leaked memory per location or use the
+   you may need to allow some small amount of leaked memory per call stack or use the
    ``filtering_fn`` argument to filter out false positive leak reports caused by
    objects that the interpreter plans to reuse later. These caches are
    implementation details of the interpreter, so the amount of memory
-   allocated, the location of the allocation, and the allocator that was used
+   allocated, the call stack of the allocation, and the allocator that was used
    can all change from one Python version to another.

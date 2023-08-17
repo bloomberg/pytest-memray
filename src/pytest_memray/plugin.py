@@ -152,9 +152,7 @@ class Manager:
             return
 
         if len(markers) > 1:
-            raise ValueError(
-                "Only one memray marker can be applied at the same time to the same test"
-            )
+            raise ValueError("Only one Memray marker can be applied to each test")
 
         def _build_bin_path() -> Path:
             if self._tmp_dir is None and not os.getenv("MEMRAY_RESULT_PATH"):

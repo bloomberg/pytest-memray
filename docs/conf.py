@@ -9,6 +9,7 @@ from sphinx.application import Sphinx
 from sphinxcontrib.programoutput import Command
 
 extensions = [
+    "sphinx.ext.autodoc",
     "sphinx.ext.extlinks",
     "sphinx.ext.githubpages",
     "sphinxarg.ext",
