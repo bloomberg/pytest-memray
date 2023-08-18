@@ -6,9 +6,10 @@ pytest-memray API
 Types
 -----
 
-.. autoclass:: StackElement
+.. autoclass:: StackFrame()
+   :members:
 
-.. autoclass:: Stack
+.. autoclass:: Stack()
    :members:
 
 .. autoclass:: LeaksFilteringFunction

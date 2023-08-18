@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Iterable
 from typing import Tuple
 from typing import cast
 from typing import Callable
 from typing import Optional
-from typing import Collection
+from typing import Sequence
 
 from memray import AllocationRecord
 from memray import FileReader
@@ -17,12 +18,34 @@ from .utils import sizeof_fmt
 from .utils import value_or_ini
 
 PytestSection = Tuple[str, str]
-StackElement = Tuple[str, str, int]
+
+
+@dataclass
+class StackFrame:
+    """One frame of a call stack.
+
+    Each frame has attributes to tell you what code was executing.
+    """
+
+    function: str
+    """The function being executed, or ``"???"`` if unknown."""
+
+    filename: str
+    """The source file being executed, or ``"???"`` if unknown."""
+
+    lineno: int
+    """The line number of the executing line, or ``0`` if unknown."""
 
 
 @dataclass
 class Stack:
-    frames: Collection[StackElement]
+    """The call stack that led to some memory allocation.
+
+    You can inspect the frames which make up the call stack.
+    """
+
+    frames: Sequence[StackFrame]
+    """The frames that make up the call stack, most recent first."""
 
 
 LeaksFilteringFunction = Callable[[Stack], bool]
@@ -112,6 +135,16 @@ class _LeakedInfo(_MemoryInfoBase):
         )
 
 
+def passes_filter(
+    stack: Iterable[Tuple[str, str, int]], filter_fn: Optional[LeaksFilteringFunction]
+) -> bool:
+    if filter_fn is None:
+        return True
+
+    frames = [StackFrame(*frame) for frame in stack]
+    return filter_fn(Stack(frames))
+
+
 def limit_memory(
     limit: str, *, _result_file: Path, _config: Config
 ) -> _MemoryInfo | None:
@@ -148,7 +181,7 @@ def limit_leaks(
         for allocation in allocations
         if (
             allocation.size >= memory_limit
-            and (filter_fn is None or filter_fn(Stack(allocation.hybrid_stack_trace())))
+            and passes_filter(allocation.hybrid_stack_trace(), filter_fn)
         )
     )
     if not leaked_allocations:

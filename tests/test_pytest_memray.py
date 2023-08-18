@@ -671,8 +671,8 @@ def test_leak_marker_filtering_function(pytester: Pytester) -> None:
              # No free call here
 
          def filtering_function(stack):
-             for fn, _, _ in stack.frames:
-                 if fn == "this_should_not_be_there":
+             for frame in stack.frames:
+                 if frame.function == "this_should_not_be_there":
                      return False
              return True
 
