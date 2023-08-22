@@ -35,12 +35,16 @@ from pytest import TestReport
 from pytest import hookimpl
 
 from .marks import limit_memory
-from .marks import _MemoryInfo
 from .marks import limit_leaks
 from .utils import WriteEnabledDirectoryAction
 from .utils import positive_int
 from .utils import sizeof_fmt
 from .utils import value_or_ini
+
+
+class SectionMetadata(Protocol):
+    long_repr: str
+    section: Tuple[str, str]
 
 
 class PluginFn(Protocol):
@@ -49,7 +53,7 @@ class PluginFn(Protocol):
         _result_file: Path,
         _config: Config,
         **kwargs: Any,
-    ) -> _MemoryInfo | None:
+    ) -> SectionMetadata | None:
         ...
 
 

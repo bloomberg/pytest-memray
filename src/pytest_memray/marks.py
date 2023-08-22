@@ -3,11 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
+from typing import Optional
+from typing import Protocol
 from typing import Tuple
 from typing import cast
-from typing import Callable
-from typing import Optional
-from typing import Sequence
 
 from memray import AllocationRecord
 from memray import FileReader
@@ -44,86 +43,79 @@ class Stack:
     You can inspect the frames which make up the call stack.
     """
 
-    frames: Sequence[StackFrame]
+    frames: Tuple[StackFrame, ...]
     """The frames that make up the call stack, most recent first."""
 
 
-LeaksFilteringFunction = Callable[[Stack], bool]
+class LeaksFilterFunction(Protocol):
+    """A callable that can decide whether to ignore some memory leaks.
+
+    This can be used to suppress leak reports from locations that are known to
+    leak. For instance, you might know that objects of a certain type are
+    cached by the code you're invoking, and so you might want to ignore all
+    reports of leaked memory allocated below that type's constructor.
+
+    You can provide any callable with the following signature as the
+    ``filter_fn`` keyword argument for the `.limit_leaks` marker:
+    """
+
+    def __call__(self, stack: Stack) -> bool:
+        """Return whether allocations from this stack should be reported.
+
+        Return ``True`` if you want the leak to be reported, or ``False`` if
+        you want it to be suppressed.
+        """
+        ...
 
 
 @dataclass
-class _MemoryInfoBase:
+class _MemoryInfo:
     """Type that holds memory-related info for a failed test."""
 
     max_memory: float
     allocations: list[AllocationRecord]
     num_stacks: int
     native_stacks: bool
-
-    def _generate_section_text(self, limit_text: str, header_text: str) -> str:
-        text_lines = [header_text]
-        for record in self.allocations:
-            size = record.size
-            stack_trace = (
-                record.hybrid_stack_trace()
-                if self.native_stacks
-                else record.stack_trace()
-            )
-            if not stack_trace:
-                continue
-            padding = " " * 4
-            text_lines.append(f"{padding}- {sizeof_fmt(size)} allocated here:")
-            stacks_left = self.num_stacks
-            for function, file, line in stack_trace:
-                if stacks_left <= 0:
-                    text_lines.append(f"{padding*2}...")
-                    break
-                text_lines.append(f"{padding*2}{function}:{file}:{line}")
-                stacks_left -= 1
-
-        return "\n".join(text_lines)
-
-    @property
-    def section(self) -> PytestSection:
-        raise NotImplementedError
-
-    @property
-    def long_repr(self) -> str:
-        raise NotImplementedError
-
-
-@dataclass
-class _MemoryInfo(_MemoryInfoBase):
     total_allocated_memory: int
 
     @property
     def section(self) -> PytestSection:
         """Return a tuple in the format expected by section reporters."""
-        header_text = (
-            f"List of allocations: {sizeof_fmt(self.total_allocated_memory)} "
-            f"out of limit of {sizeof_fmt(self.max_memory)}"
+        body = _generate_section_text(
+            self.allocations, self.native_stacks, self.num_stacks
         )
         return (
             "memray-max-memory",
-            self._generate_section_text("Test is using", header_text),
+            "List of allocations:\n" + body,
         )
 
     @property
     def long_repr(self) -> str:
         """Generate a longrepr user-facing error message."""
-        return f"Test was limited to {sizeof_fmt(self.max_memory)} but allocated {sizeof_fmt(self.total_allocated_memory)}"
+        return (
+            f"Test was limited to {sizeof_fmt(self.max_memory)} "
+            f"but allocated {sizeof_fmt(self.total_allocated_memory)}"
+        )
 
 
 @dataclass
-class _LeakedInfo(_MemoryInfoBase):
+class _LeakedInfo:
     """Type that holds leaked memory-related info for a failed test."""
+
+    max_memory: float
+    allocations: list[AllocationRecord]
+    num_stacks: int
+    native_stacks: bool
 
     @property
     def section(self) -> PytestSection:
         """Return a tuple in the format expected by section reporters."""
+        body = _generate_section_text(
+            self.allocations, self.native_stacks, self.num_stacks
+        )
         return (
             "memray-leaked-memory",
-            self._generate_section_text("Test leaked", "List of leaked allocations:"),
+            "List of leaked allocations:\n" + body,
         )
 
     @property
@@ -135,13 +127,37 @@ class _LeakedInfo(_MemoryInfoBase):
         )
 
 
-def passes_filter(
-    stack: Iterable[Tuple[str, str, int]], filter_fn: Optional[LeaksFilteringFunction]
+def _generate_section_text(
+    allocations: list[AllocationRecord], native_stacks: bool, num_stacks: int
+) -> str:
+    text_lines = []
+    for record in allocations:
+        size = record.size
+        stack_trace = (
+            record.hybrid_stack_trace() if native_stacks else record.stack_trace()
+        )
+        if not stack_trace:
+            continue
+        padding = " " * 4
+        text_lines.append(f"{padding}- {sizeof_fmt(size)} allocated here:")
+        stacks_left = num_stacks
+        for function, file, line in stack_trace:
+            if stacks_left <= 0:
+                text_lines.append(f"{padding*2}...")
+                break
+            text_lines.append(f"{padding*2}{function}:{file}:{line}")
+            stacks_left -= 1
+
+    return "\n".join(text_lines)
+
+
+def _passes_filter(
+    stack: Iterable[Tuple[str, str, int]], filter_fn: Optional[LeaksFilterFunction]
 ) -> bool:
     if filter_fn is None:
         return True
 
-    frames = [StackFrame(*frame) for frame in stack]
+    frames = tuple(StackFrame(*frame) for frame in stack)
     return filter_fn(Stack(frames))
 
 
@@ -150,8 +166,9 @@ def limit_memory(
 ) -> _MemoryInfo | None:
     """Limit memory used by the test."""
     reader = FileReader(_result_file)
-    func = reader.get_high_watermark_allocation_records
-    allocations: list[AllocationRecord] = list((func(merge_threads=True)))
+    allocations: list[AllocationRecord] = list(
+        reader.get_high_watermark_allocation_records(merge_threads=True)
+    )
     max_memory = parse_memory_string(limit)
     total_allocated_memory = sum(record.size for record in allocations)
     if total_allocated_memory < max_memory:
@@ -159,20 +176,25 @@ def limit_memory(
     num_stacks: int = cast(int, value_or_ini(_config, "stacks"))
     native_stacks: bool = cast(bool, value_or_ini(_config, "native"))
     return _MemoryInfo(
-        max_memory, allocations, num_stacks, native_stacks, total_allocated_memory
+        max_memory=max_memory,
+        allocations=allocations,
+        num_stacks=num_stacks,
+        native_stacks=native_stacks,
+        total_allocated_memory=total_allocated_memory,
     )
 
 
 def limit_leaks(
     location_limit: str,
     *,
-    filter_fn: Optional[LeaksFilteringFunction] = None,
+    filter_fn: Optional[LeaksFilterFunction] = None,
     _result_file: Path,
     _config: Config,
 ) -> _LeakedInfo | None:
     reader = FileReader(_result_file)
-    func = reader.get_leaked_allocation_records
-    allocations: list[AllocationRecord] = list((func(merge_threads=True)))
+    allocations: list[AllocationRecord] = list(
+        reader.get_leaked_allocation_records(merge_threads=True)
+    )
 
     memory_limit = parse_memory_string(location_limit)
 
@@ -181,19 +203,26 @@ def limit_leaks(
         for allocation in allocations
         if (
             allocation.size >= memory_limit
-            and passes_filter(allocation.hybrid_stack_trace(), filter_fn)
+            and _passes_filter(allocation.hybrid_stack_trace(), filter_fn)
         )
     )
+
     if not leaked_allocations:
         return None
-    sum(allocation.size for allocation in leaked_allocations)
+
     num_stacks: int = max(cast(int, value_or_ini(_config, "stacks")), 5)
     return _LeakedInfo(
-        memory_limit,
-        leaked_allocations,
-        num_stacks,
+        max_memory=memory_limit,
+        allocations=leaked_allocations,
+        num_stacks=num_stacks,
         native_stacks=True,
     )
 
 
-__all__ = ["limit_memory", "limit_leaks", "Stack"]
+__all__ = [
+    "limit_memory",
+    "limit_leaks",
+    "LeaksFilterFunction",
+    "Stack",
+    "StackFrame",
+]
