@@ -9,8 +9,10 @@ from sphinx.application import Sphinx
 from sphinxcontrib.programoutput import Command
 
 extensions = [
+    "sphinx.ext.autodoc",
     "sphinx.ext.extlinks",
     "sphinx.ext.githubpages",
+    "sphinx.ext.intersphinx",
     "sphinxarg.ext",
     "sphinx_inline_tabs",
     "sphinxcontrib.programoutput",
@@ -34,6 +36,15 @@ prev = Command.get_output
 here = Path(__file__).parent
 linkcheck_allowed_redirects = {
     "https://github.com/bloomberg/pytest-memray/issues/.*": "https://github.com/bloomberg/pytest-memray/pull/.*"
+}
+
+# Try to resolve Sphinx references as Python objects by default. This means we
+# don't need :func: or :class: etc, which keep docstrings more human readable.
+default_role = "py:obj"
+
+# Automatically link to Python standard library types.
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
 }
 
 

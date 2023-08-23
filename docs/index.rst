@@ -13,4 +13,5 @@ reports like:
 
    usage
    configuration
+   api
    news

@@ -17,6 +17,7 @@ from typing import Iterable
 from typing import List
 from typing import Tuple
 from typing import cast
+from typing import Protocol
 
 from _pytest.terminal import TerminalReporter
 from memray import AllocationRecord
@@ -34,12 +35,32 @@ from pytest import TestReport
 from pytest import hookimpl
 
 from .marks import limit_memory
+from .marks import limit_leaks
 from .utils import WriteEnabledDirectoryAction
 from .utils import positive_int
 from .utils import sizeof_fmt
 from .utils import value_or_ini
 
-MARKERS = {"limit_memory": limit_memory}
+
+class SectionMetadata(Protocol):
+    long_repr: str
+    section: Tuple[str, str]
+
+
+class PluginFn(Protocol):
+    def __call__(
+        *args: Any,
+        _result_file: Path,
+        _config: Config,
+        **kwargs: Any,
+    ) -> SectionMetadata | None:
+        ...
+
+
+MARKERS = {
+    "limit_memory": limit_memory,
+    "limit_leaks": limit_leaks,
+}
 
 N_TOP_ALLOCS = 5
 N_HISTOGRAM_BINS = 5
@@ -134,6 +155,9 @@ class Manager:
             yield
             return
 
+        if len(markers) > 1:
+            raise ValueError("Only one Memray marker can be applied to each test")
+
         def _build_bin_path() -> Path:
             if self._tmp_dir is None and not os.getenv("MEMRAY_RESULT_PATH"):
                 of_id = pyfuncitem.nodeid.replace("::", "-")
@@ -150,6 +174,9 @@ class Manager:
         trace_python_allocators: bool = bool(
             value_or_ini(self.config, "trace_python_allocators")
         )
+
+        if markers and "limit_leaks" in markers:
+            native = trace_python_allocators = True
 
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> object | None:
@@ -198,19 +225,17 @@ class Manager:
             return None
 
         for marker in item.iter_markers():
-            marker_fn = MARKERS.get(marker.name)
-            if not marker_fn:
+            maybe_marker_fn = MARKERS.get(marker.name)
+            if not maybe_marker_fn:
                 continue
+            marker_fn: PluginFn = cast(PluginFn, maybe_marker_fn)
             result = self.results.get(item.nodeid)
             if not result:
                 continue
-            reader = FileReader(result.result_file)
-            func = reader.get_high_watermark_allocation_records
-            allocations = list((func(merge_threads=True)))
             res = marker_fn(
                 *marker.args,
                 **marker.kwargs,
-                _allocations=allocations,
+                _result_file=result.result_file,
                 _config=self.config,
             )
             if res:

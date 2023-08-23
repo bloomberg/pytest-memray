@@ -594,3 +594,151 @@ def test_memray_does_not_raise_warnings(pytester: Pytester) -> None:
     )
     result = pytester.runpytest("-Werror", "--memray")
     assert result.ret == ExitCode.OK
+
+
+@pytest.mark.parametrize(
+    "size, outcome",
+    [
+        (1, ExitCode.OK),
+        (1024 * 1 / 10, ExitCode.OK),
+        (1024 * 1, ExitCode.TESTS_FAILED),
+        (1024 * 10, ExitCode.TESTS_FAILED),
+    ],
+)
+def test_leak_marker(pytester: Pytester, size: int, outcome: ExitCode) -> None:
+    pytester.makepyfile(
+        f"""
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+        @pytest.mark.limit_leaks("5KB")
+        def test_memory_alloc_fails():
+            for _ in range(10):
+                allocator.valloc({size})
+                # No free call here
+        """
+    )
+
+    result = pytester.runpytest("--memray")
+
+    assert result.ret == outcome
+
+
+@pytest.mark.parametrize(
+    "size, outcome",
+    [
+        (1, ExitCode.OK),
+        (1024 * 1 / 10, ExitCode.OK),
+        (1024 * 1, ExitCode.TESTS_FAILED),
+        (1024 * 10, ExitCode.TESTS_FAILED),
+    ],
+)
+def test_leak_marker_in_a_thread(
+    pytester: Pytester, size: int, outcome: ExitCode
+) -> None:
+    pytester.makepyfile(
+        f"""
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+        import threading
+        def allocating_func():
+            for _ in range(10):
+                allocator.valloc({size})
+                # No free call here
+        @pytest.mark.limit_leaks("5KB")
+        def test_memory_alloc_fails():
+            t = threading.Thread(target=allocating_func)
+            t.start()
+            t.join()
+        """
+    )
+
+    result = pytester.runpytest("--memray")
+    assert result.ret == outcome
+
+
+def test_leak_marker_filtering_function(pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        LEAK_SIZE = 1024
+        allocator = MemoryAllocator()
+
+        def this_should_not_be_there():
+            allocator.valloc(LEAK_SIZE)
+            # No free call here
+
+        def filtering_function(stack):
+            for frame in stack.frames:
+                if frame.function == "this_should_not_be_there":
+                    return False
+            return True
+
+        @pytest.mark.limit_leaks("5KB", filter_fn=filtering_function)
+        def test_memory_alloc_fails():
+            for _ in range(10):
+                this_should_not_be_there()
+        """
+    )
+
+    result = pytester.runpytest("--memray")
+
+    assert result.ret == ExitCode.OK
+
+
+def test_leak_marker_does_work_if_memray_not_passed(pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+        @pytest.mark.limit_leaks("0B")
+        def test_memory_alloc_fails():
+            allocator.valloc(512)
+            # No free call here
+        """
+    )
+
+    result = pytester.runpytest()
+
+    assert result.ret == ExitCode.TESTS_FAILED
+
+
+def test_multiple_markers_are_not_supported(pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        @pytest.mark.limit_leaks("0MB")
+        @pytest.mark.limit_memory("0MB")
+        def test_bar():
+            pass
+        """
+    )
+
+    result = pytester.runpytest("--memray")
+    assert result.ret == ExitCode.TESTS_FAILED
+
+    output = result.stdout.str()
+    assert "Only one Memray marker can be applied to each test" in output
+
+
+def test_multiple_markers_are_not_supported_with_global_marker(
+    pytester: Pytester,
+) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        pytestmark = pytest.mark.limit_memory("1 MB")
+        @pytest.mark.limit_leaks("0MB")
+        def test_bar():
+            pass
+        """
+    )
+
+    result = pytester.runpytest("--memray")
+    assert result.ret == ExitCode.TESTS_FAILED
+
+    output = result.stdout.str()
+    assert "Only one Memray marker can be applied to each test" in output
