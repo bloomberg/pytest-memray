@@ -1,0 +1,1 @@
+Add a new --fail-on-increase option that fails a test with the ``limit_memory`` marker if it uses more memory than its last successful run.

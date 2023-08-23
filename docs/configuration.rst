@@ -29,6 +29,9 @@ The complete list of command line options is:
 
   ``--trace-python-allocators``
     Record allocations made by the Pymalloc allocator (will be slower)
+  
+  ``--fail-on-increase``
+    Fail a test with the limit_memory marker if it uses more memory than its last successful run
 
 .. tab:: Config file options
 
@@ -49,3 +52,6 @@ The complete list of command line options is:
 
   ``trace_python_allocators(bool)``
     Record allocations made by the Pymalloc allocator (will be slower)
+
+  ``--fail-on-increase(bool)``
+    Fail a test with the limit_memory marker if it uses more memory than its last successful run

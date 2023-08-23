@@ -127,6 +127,28 @@ class _LeakedInfo:
         )
 
 
+@dataclass
+class _MoreMemoryInfo:
+    previous_memory: float
+    new_memory: float
+
+    @property
+    def section(self) -> PytestSection:
+        """Return a tuple in the format expected by section reporters."""
+        return (
+            "memray-max-memory",
+            "Test uses more memory than previous run",
+        )
+
+    @property
+    def long_repr(self) -> str:
+        """Generate a longrepr user-facing error message."""
+        return (
+            f"Test previously used {sizeof_fmt(self.previous_memory)} "
+            f"but now uses {sizeof_fmt(self.new_memory)}"
+        )
+
+
 def _generate_section_text(
     allocations: list[AllocationRecord], native_stacks: bool, num_stacks: int
 ) -> str:
@@ -162,8 +184,12 @@ def _passes_filter(
 
 
 def limit_memory(
-    limit: str, *, _result_file: Path, _config: Config
-) -> _MemoryInfo | None:
+    limit: str,
+    *,
+    _result_file: Path,
+    _config: Config,
+    _test_id: str,
+) -> _MemoryInfo | _MoreMemoryInfo | None:
     """Limit memory used by the test."""
     reader = FileReader(_result_file)
     allocations: list[AllocationRecord] = list(
@@ -171,6 +197,17 @@ def limit_memory(
     )
     max_memory = parse_memory_string(limit)
     total_allocated_memory = sum(record.size for record in allocations)
+
+    if _config.cache is not None:
+        cache = _config.cache.get(f"memray/{_test_id}", {})
+        previous = cache.get("total_allocated_memory", float("inf"))
+        fail_on_increase = cast(bool, value_or_ini(_config, "fail_on_increase"))
+        if fail_on_increase and total_allocated_memory > previous:
+            return _MoreMemoryInfo(previous, total_allocated_memory)
+
+        cache["total_allocated_memory"] = total_allocated_memory
+        _config.cache.set(f"memray/{_test_id}", cache)
+
     if total_allocated_memory < max_memory:
         return None
     num_stacks: int = cast(int, value_or_ini(_config, "stacks"))
@@ -190,6 +227,7 @@ def limit_leaks(
     filter_fn: Optional[LeaksFilterFunction] = None,
     _result_file: Path,
     _config: Config,
+    _test_id: str,
 ) -> _LeakedInfo | None:
     reader = FileReader(_result_file)
     allocations: list[AllocationRecord] = list(
