@@ -52,6 +52,7 @@ class PluginFn(Protocol):
         *args: Any,
         _result_file: Path,
         _config: Config,
+        _test_id: str,
         **kwargs: Any,
     ) -> SectionMetadata | None:
         ...
@@ -237,6 +238,7 @@ class Manager:
                 **marker.kwargs,
                 _result_file=result.result_file,
                 _config=self.config,
+                _test_id=item.nodeid,
             )
             if res:
                 report.outcome = "failed"
@@ -384,6 +386,12 @@ def pytest_addoption(parser: Parser) -> None:
         default=False,
         help="Record allocations made by the Pymalloc allocator (will be slower)",
     )
+    group.addoption(
+        "--fail-on-increase",
+        action="store_true",
+        default=False,
+        help="Fail a test with the limit_memory marker if it uses more memory than its last successful run",
+    )
 
     parser.addini("memray", "Activate pytest.ini setting", type="bool")
     parser.addini(
@@ -405,6 +413,11 @@ def pytest_addoption(parser: Parser) -> None:
     parser.addini(
         "trace_python_allocators",
         help="Record allocations made by the Pymalloc allocator (will be slower)",
+        type="bool",
+    )
+    parser.addini(
+        "fail-on-increase",
+        help="Fail a test with the limit_memory marker if it uses more memory than its last successful run",
         type="bool",
     )
     help_msg = "Show the N tests that allocate most memory (N=0 for all)"

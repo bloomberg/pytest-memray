@@ -796,3 +796,68 @@ def test_multiple_markers_are_not_supported_with_global_marker(
 
     output = result.stdout.str()
     assert "Only one Memray marker can be applied to each test" in output
+
+
+def test_fail_on_increase(pytester: Pytester):
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        @pytest.mark.limit_memory("100MB")
+        def test_memory_alloc_fails():
+            allocator.valloc(1024)
+            allocator.free()
+        """
+    )
+    result = pytester.runpytest("--memray")
+    assert result.ret == ExitCode.OK
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        @pytest.mark.limit_memory("100MB")
+        def test_memory_alloc_fails():
+            allocator.valloc(1024 * 10)
+            allocator.free()
+        """
+    )
+    result = pytester.runpytest("--memray", "--fail-on-increase")
+    assert result.ret == ExitCode.TESTS_FAILED
+    output = result.stdout.str()
+    assert "Test uses more memory than previous run" in output
+    assert "Test previously used 1.0KiB but now uses 10.0KiB" in output
+
+
+def test_fail_on_increase_unset(pytester: Pytester):
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        @pytest.mark.limit_memory("100MB")
+        def test_memory_alloc_fails():
+            allocator.valloc(1024)
+            allocator.free()
+        """
+    )
+    result = pytester.runpytest("--memray")
+    assert result.ret == ExitCode.OK
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        @pytest.mark.limit_memory("100MB")
+        def test_memory_alloc_fails():
+            allocator.valloc(1024 * 10)
+            allocator.free()
+        """
+    )
+    result = pytester.runpytest("--memray")
+    assert result.ret == ExitCode.OK

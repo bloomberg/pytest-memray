@@ -97,6 +97,8 @@ MEMORY PROBLEMS demo/test_ok.py::test_memory_exceed
 - `--stacks=STACKS` - Show the N stack entries when showing tracebacks of memory allocations
 - `--native` - Show native frames when showing tracebacks of memory allocations (will be slower)
 - `--trace-python-allocators` - Record allocations made by the Pymalloc allocator (will be slower)
+- `--fail-on-increase` - Fail a test with the `limit_memory`` marker if it uses
+  more memory than its last successful run
 
 ## Configuration - INI
 
@@ -105,7 +107,9 @@ MEMORY PROBLEMS demo/test_ok.py::test_memory_exceed
 - `hide_memray_summary(bool)` - hide the memray summary at the end of the execution
 - `stacks(int)` - Show the N stack entries when showing tracebacks of memory allocations
 - `native(bool)`- Show native frames when showing tracebacks of memory allocations (will be slower)
-- `trace_python_allocators` - Record allocations made by the Pymalloc allocator (will be slower)
+- `trace_python_allocators(bool)` - Record allocations made by the Pymalloc allocator (will be slower)
+- `fail-on-increase(bool)` - Fail a test with the `limit_memory` marker if it
+  uses more memory than its last successful run
 
 ## License
 
