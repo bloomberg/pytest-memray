@@ -5,6 +5,23 @@ Release History
 
 .. towncrier release notes start
 
+v1.5.0 (2023-08-23)
+-------------------
+
+Features - 1.5.0
+~~~~~~~~~~~~~~~~
+
+- Add a new ``limit_leaks`` marker to check for memory leaks in tests. (:issue:`45`)
+- Support passing ``--trace-python-allocators`` to memray to track all Python allocations. (:issue:`78` and :issue:`64`)
+
+v1.4.1 (2023-06-06)
+-------------------
+
+Bug Fixes - 1.4.1
+~~~~~~~~~~~~~~~~~
+
+- Fix long test names with xdis (:issue:`68`)
+
 v1.4.0 (2022-12-02)
 -------------------
 
