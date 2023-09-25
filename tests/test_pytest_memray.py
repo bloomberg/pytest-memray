@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import xml.etree.ElementTree as ET
 from types import SimpleNamespace
 from unittest.mock import ANY
@@ -9,6 +10,25 @@ import pytest
 from memray import Tracker
 from pytest import ExitCode
 from pytest import Pytester
+
+from pytest_memray.marks import StackFrame
+
+
+def extract_stacks(test_output: str) -> list[list[StackFrame]]:
+    ret: list[list[StackFrame]] = []
+    before_start = True
+    for line in test_output.splitlines():
+        if before_start:
+            if "List of allocations:" in line:
+                before_start = False
+        elif "allocated here" in line:
+            ret.append([])
+        elif (match := re.match(r"^ {8}([^:]+):(.*):(\d+)$", line)) is not None:
+            ret[-1].append(
+                StackFrame(function=match[1], filename=match[2], lineno=int(match[3]))
+            )
+
+    return ret
 
 
 def test_help_message(pytester: Pytester) -> None:
@@ -176,10 +196,11 @@ def test_memray_report_limit_number_stacks(num_stacks: int, pytester: Pytester) 
 
     assert result.ret == ExitCode.TESTS_FAILED
 
-    output = result.stdout.str()
-
-    assert "valloc:" in output
-    assert output.count("rec:") == min(num_stacks - 1, 10)
+    stacks = extract_stacks(result.stdout.str())
+    valloc_stacks = [stack for stack in stacks if stack[0].function == "valloc"]
+    (valloc_stack,) = valloc_stacks
+    num_rec_frames = sum(1 for frame in valloc_stack if frame.function == "rec")
+    assert num_rec_frames == min(num_stacks - 1, 10)
 
 
 @pytest.mark.parametrize("native", [True, False])
