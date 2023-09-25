@@ -133,7 +133,7 @@ class Manager:
         self.result_metadata_path = self.result_path / "metadata"
         self.result_metadata_path.mkdir(exist_ok=True, parents=True)
 
-    @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
+    @hookimpl(hookwrapper=True)
     def pytest_unconfigure(self, config: Config) -> Generator[None, None, None]:
         yield
         if self._tmp_dir is not None:
@@ -141,7 +141,7 @@ class Manager:
         if os.environ.get("MEMRAY_RESULT_PATH"):
             del os.environ["MEMRAY_RESULT_PATH"]
 
-    @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
+    @hookimpl(hookwrapper=True)
     def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
         func = pyfuncitem.obj
 
@@ -212,7 +212,7 @@ class Manager:
         pyfuncitem.obj = wrapper
         yield
 
-    @hookimpl(hookwrapper=True)  # type: ignore[misc] # Untyped decorator
+    @hookimpl(hookwrapper=True)
     def pytest_runtest_makereport(
         self, item: Item, call: CallInfo[None]
     ) -> Generator[None, TestReport | None, TestReport | None]:
@@ -245,7 +245,7 @@ class Manager:
                 outcome.force_result(report)
         return None
 
-    @hookimpl(hookwrapper=True, trylast=True)  # type: ignore[misc] # Untyped decorator
+    @hookimpl(hookwrapper=True, trylast=True)
     def pytest_report_teststatus(
         self, report: CollectReport | TestReport
     ) -> Generator[None, TestReport, None]:
@@ -257,7 +257,7 @@ class Manager:
             outcome.force_result(("failed", "M", "MEMORY PROBLEMS"))
         return None
 
-    @hookimpl  # type: ignore[misc] # Untyped decorator
+    @hookimpl
     def pytest_terminal_summary(
         self, terminalreporter: TerminalReporter, exitstatus: ExitCode
     ) -> None:
