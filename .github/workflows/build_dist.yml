@@ -7,7 +7,7 @@ on:
     types:
       - published
   schedule:
-    # At 12:00 on every day-of-month
+    # At 12:00 UTC on every day-of-month
     - cron: "0 12 */1 * *"
 
 concurrency:
