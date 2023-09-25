@@ -373,6 +373,39 @@ def test_memray_report_limit(pytester: Pytester) -> None:
     assert "results for test_memray_report_limit.py::test_bar" in output
 
 
+def test_memray_report_limit_without_limit(pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        def allocating_func1():
+            allocator.valloc(1024)
+            allocator.free()
+
+        def allocating_func2():
+            allocator.valloc(1024*2)
+            allocator.free()
+
+        def test_foo():
+            allocating_func1()
+
+        def test_bar():
+            allocating_func2()
+    """
+    )
+
+    result = pytester.runpytest("--memray", "--most-allocations=0")
+
+    assert result.ret == ExitCode.OK
+
+    output = result.stdout.str()
+
+    assert "results for test_memray_report_limit_without_limit.py::test_foo" in output
+    assert "results for test_memray_report_limit_without_limit.py::test_bar" in output
+
+
 def test_failing_tests_are_not_reported(pytester: Pytester) -> None:
     pytester.makepyfile(
         """

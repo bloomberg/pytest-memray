@@ -48,7 +48,7 @@ def parse_memory_string(mem_str: str) -> float:
 
 def value_or_ini(config: Config, key: str) -> object:
     value = config.getvalue(key)
-    if value:
+    if value is not None:
         return value
     try:
         return config.getini(key)
