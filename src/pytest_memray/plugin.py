@@ -287,6 +287,8 @@ class Manager:
         )
 
         max_results = cast(int, value_or_ini(self.config, "most_allocations"))
+        if max_results == 0:
+            max_results = len(total_sizes)
 
         for test_id, total_size in total_sizes.most_common(max_results):
             result = self.results[test_id]
