@@ -369,11 +369,11 @@ def test_memray_report_limit(pytester: Pytester) -> None:
         allocator = MemoryAllocator()
 
         def allocating_func1():
-            allocator.valloc(1024)
+            allocator.valloc(1024*1024)
             allocator.free()
 
         def allocating_func2():
-            allocator.valloc(1024*2)
+            allocator.valloc(1024*1024*2)
             allocator.free()
 
         def test_foo():
