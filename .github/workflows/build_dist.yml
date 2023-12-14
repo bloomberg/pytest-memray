@@ -24,7 +24,7 @@ jobs:
       - name: Build distributions
         run: pipx run build[virtualenv] --sdist --wheel
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           path: dist/*
 
