@@ -1,0 +1,1 @@
+Use aggregated capture files, reducing the amount of temporary disk space required in order to run tests.
