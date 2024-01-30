@@ -7,6 +7,7 @@ from unittest.mock import ANY
 from unittest.mock import patch
 
 import pytest
+from memray import FileFormat
 from memray import Tracker
 from pytest import ExitCode
 from pytest import Pytester
@@ -225,7 +226,10 @@ def test_memray_report_native(native: bool, pytester: Pytester) -> None:
 
     output = result.stdout.str()
     mock.assert_called_once_with(
-        ANY, native_traces=native, trace_python_allocators=False
+        ANY,
+        native_traces=native,
+        trace_python_allocators=False,
+        file_format=FileFormat.AGGREGATED_ALLOCATIONS,
     )
 
     if native:
@@ -268,7 +272,10 @@ def test_memray_report_python_allocators(
 
     output = result.stdout.str()
     mock.assert_called_once_with(
-        ANY, native_traces=False, trace_python_allocators=trace_python_allocators
+        ANY,
+        native_traces=False,
+        trace_python_allocators=trace_python_allocators,
+        file_format=FileFormat.AGGREGATED_ALLOCATIONS,
     )
 
     if trace_python_allocators:

@@ -21,6 +21,7 @@ from typing import Protocol
 
 from _pytest.terminal import TerminalReporter
 from memray import AllocationRecord
+from memray import FileFormat
 from memray import FileReader
 from memray import Metadata
 from memray import Tracker
@@ -188,6 +189,7 @@ class Manager:
                     result_file,
                     native_traces=native,
                     trace_python_allocators=trace_python_allocators,
+                    file_format=FileFormat.AGGREGATED_ALLOCATIONS,
                 ):
                     test_result = func(*args, **kwargs)
                 try:
