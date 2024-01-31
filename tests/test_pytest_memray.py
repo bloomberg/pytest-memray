@@ -660,6 +660,7 @@ def test_memray_does_not_raise_warnings(pytester: Pytester) -> None:
 @pytest.mark.parametrize(
     "size, outcome",
     [
+        (0, ExitCode.OK),
         (1, ExitCode.OK),
         (1024 * 1 / 10, ExitCode.OK),
         (1024 * 1, ExitCode.TESTS_FAILED),
