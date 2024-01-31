@@ -85,12 +85,10 @@ def histogram(
 
 def cli_hist(data: Iterable[float], bins: int, *, log_scale: bool = True) -> str:
     bars = " ▁▂▃▄▅▆▇█"
+    if log_scale:
+        data = [math.log(number if number else 1) for number in data]
     low = min(data)
     high = max(data)
-    if log_scale:
-        data = map(math.log, filter(lambda number: number != 0, data))
-        low = math.log(low)
-        high = math.log(high)
     data_bins = histogram(data, low=low, high=high, bins=bins)
     bar_indexes = (int(elem * (len(bars) - 1) / max(data_bins)) for elem in data_bins)
     result = " ".join(bars[bar_index] for bar_index in bar_indexes)
