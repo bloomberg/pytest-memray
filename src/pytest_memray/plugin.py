@@ -78,7 +78,7 @@ def histogram(
     [0, 0, 0, 0, 1, 0, 0, 1, 3, 2]
 
     """
-    step = ((high - low) / bins) or low
+    step = ((high - low) / bins) or low or 1
     dist = collections.Counter((x - low) // step for x in iterable)
     return [dist[b] for b in range(bins)]
 

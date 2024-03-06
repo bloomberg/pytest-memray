@@ -15,6 +15,7 @@ import pytest
 
 from pytest_memray.utils import WriteEnabledDirectoryAction
 from pytest_memray.utils import parse_memory_string
+from pytest_memray.plugin import cli_hist
 
 
 @pytest.mark.parametrize(
@@ -123,3 +124,25 @@ def test_write_enabled_dir_cannot_create(
             w_dir_check(path)
     finally:
         tmp_path.chmod(tmp_path.stat().st_mode | write)
+
+
+def test_histogram_with_zero_byte_allocations():
+    # GIVEN
+    allocations = [0, 100, 990, 1000, 50000]
+
+    # WHEN
+    histogram = cli_hist(allocations, bins=5)
+
+    # THEN
+    assert histogram == "▄   ▄ █ ▄"
+
+
+def test_histogram_with_only_zero_byte_allocations():
+    # GIVEN
+    allocations = [0, 0, 0, 0]
+
+    # WHEN
+    histogram = cli_hist(allocations, bins=5)
+
+    # THEN
+    assert histogram == "█        "

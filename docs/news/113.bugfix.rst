@@ -1,0 +1,1 @@
+Fix the generation of histograms when the tests performed zero-byte allocations.
