@@ -689,10 +689,9 @@ def test_leak_marker(pytester: Pytester, size: int, outcome: ExitCode) -> None:
 @pytest.mark.parametrize(
     "size, outcome",
     [
-        (1, ExitCode.OK),
-        (1024 * 1 / 10, ExitCode.OK),
-        (1024 * 1, ExitCode.TESTS_FAILED),
-        (1024 * 10, ExitCode.TESTS_FAILED),
+        (4 * 1024, ExitCode.OK),
+        (0.4 * 1024 * 1024, ExitCode.OK),
+        (4 * 1024 * 1024, ExitCode.TESTS_FAILED),
     ],
 )
 def test_leak_marker_in_a_thread(
@@ -708,7 +707,7 @@ def test_leak_marker_in_a_thread(
             for _ in range(10):
                 allocator.valloc({size})
                 # No free call here
-        @pytest.mark.limit_leaks("5KB")
+        @pytest.mark.limit_leaks("20MB")
         def test_memory_alloc_fails():
             t = threading.Thread(target=allocating_func)
             t.start()
