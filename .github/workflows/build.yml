@@ -21,7 +21,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { "py": "3.11", "tox_env": "py311-cov" }
+          - { "py": "3.12", "tox_env": "py312-cov" }
+          - { "py": "3.12", "tox_env": "py312" }
           - { "py": "3.11", "tox_env": "py311" }
           - { "py": "3.10", "tox_env": "py310" }
           - { "py": "3.9", "tox_env": "py39" }
