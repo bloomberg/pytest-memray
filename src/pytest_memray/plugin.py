@@ -91,7 +91,7 @@ def cli_hist(data: Iterable[float], bins: int, *, log_scale: bool = True) -> str
     high = max(data)
     data_bins = histogram(data, low=low, high=high, bins=bins)
     bar_indexes = (int(elem * (len(bars) - 1) / max(data_bins)) for elem in data_bins)
-    result = " ".join(bars[bar_index] for bar_index in bar_indexes)
+    result = "".join(bars[bar_index] for bar_index in bar_indexes)
     return result
 
 
