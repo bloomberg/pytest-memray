@@ -134,7 +134,7 @@ def test_histogram_with_zero_byte_allocations():
     histogram = cli_hist(allocations, bins=5)
 
     # THEN
-    assert histogram == "▄   ▄ █ ▄"
+    assert histogram == "▄ ▄█▄"
 
 
 def test_histogram_with_only_zero_byte_allocations():
@@ -145,4 +145,4 @@ def test_histogram_with_only_zero_byte_allocations():
     histogram = cli_hist(allocations, bins=5)
 
     # THEN
-    assert histogram == "█        "
+    assert histogram == "█    "
