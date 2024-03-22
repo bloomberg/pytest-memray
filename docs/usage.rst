@@ -37,11 +37,12 @@ that can be used to enforce additional checks and validations on tests.
 
 .. py:function:: pytest.mark.limit_memory(memory_limit: str)
 
-    Fail the execution of the test if the test allocates more memory than allowed.
+    Fail the execution of the test if the test allocates more peak memory than allowed.
 
     When this marker is applied to a test, it will cause the test to fail if the
-    execution of the test allocates more memory than allowed. It takes a single argument
-    with a string indicating the maximum memory that the test can allocate.
+    execution of the test allocates more memory (at the peak/high watermark) than allowed.
+    It takes a single argument with a string indicating the maximum memory that the test
+    can allocate.
 
     The format for the string is ``<NUMBER> ([KMGTP]B|B)``. The marker will raise
     ``ValueError`` if the string format cannot be parsed correctly.
