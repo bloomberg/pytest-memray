@@ -67,7 +67,7 @@ that can be used to enforce additional checks and validations on tests.
             pass  # do some stuff that allocates memory
 
 
-.. py:function:: pytest.mark.limit_leaks(location_limit: str, filter_fn: LeaksFilterFunction | None = None)
+.. py:function:: pytest.mark.limit_leaks(location_limit: str, filter_fn: LeaksFilterFunction | None = None, current_thread_only: bool = False)
 
     Fail the execution of the test if any call stack in the test leaks more memory than
     allowed.
