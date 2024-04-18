@@ -1,3 +1,0 @@
-Add a new ``current_thread_only`` keyword argument to the ``limit_memory`` and
-``limit_leaks`` markers to ignore all allocations made in threads other than
-the one running the test.
