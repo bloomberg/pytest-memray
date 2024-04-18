@@ -5,6 +5,21 @@ Release History
 
 .. towncrier release notes start
 
+v1.6.0 (2024-04-18)
+-------------------
+
+Features - 1.6.0
+~~~~~~~~~~~~~~~~
+- Add a new --fail-on-increase option that fails a test with the ``limit_memory`` marker if it uses more memory than its last successful run. (:issue:`91`)
+- Use aggregated capture files, reducing the amount of temporary disk space required in order to run tests. (:issue:`107`)
+- Add a new ``current_thread_only`` keyword argument to the ``limit_memory`` and
+  ``limit_leaks`` markers to ignore all allocations made in threads other than
+  the one running the test. (:issue:`117`)
+
+Bug Fixes - 1.6.0
+~~~~~~~~~~~~~~~~~
+- Fix the generation of histograms when the tests performed zero-byte allocations. (:issue:`113`)
+
 v1.5.0 (2023-08-23)
 -------------------
 
