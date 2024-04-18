@@ -868,3 +868,53 @@ def test_fail_on_increase_unset(pytester: Pytester):
     )
     result = pytester.runpytest("--memray")
     assert result.ret == ExitCode.OK
+
+
+def test_limit_memory_in_current_thread(pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+        import threading
+        def allocating_func():
+            for _ in range(10):
+                allocator.valloc(1024*5)
+                # No free call here
+
+        @pytest.mark.limit_memory("5KB", current_thread_only=True)
+        def test_memory_alloc_fails():
+            t = threading.Thread(target=allocating_func)
+            t.start()
+            t.join()
+        """
+    )
+
+    result = pytester.runpytest("--memray")
+
+    assert result.ret == ExitCode.OK
+
+
+def test_leaks_in_current_thread(pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+        import threading
+        def allocating_func():
+            for _ in range(10):
+                allocator.valloc(1024*5)
+                # No free call here
+
+        @pytest.mark.limit_leaks("5KB", current_thread_only=True)
+        def test_memory_alloc_fails():
+            t = threading.Thread(target=allocating_func)
+            t.start()
+            t.join()
+        """
+    )
+
+    result = pytester.runpytest("--memray")
+
+    assert result.ret == ExitCode.OK

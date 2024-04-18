@@ -186,15 +186,20 @@ def _passes_filter(
 def limit_memory(
     limit: str,
     *,
+    current_thread_only: bool = False,
     _result_file: Path,
     _config: Config,
     _test_id: str,
 ) -> _MemoryInfo | _MoreMemoryInfo | None:
     """Limit memory used by the test."""
     reader = FileReader(_result_file)
-    allocations: list[AllocationRecord] = list(
-        reader.get_high_watermark_allocation_records(merge_threads=True)
-    )
+    allocations: list[AllocationRecord] = [
+        record
+        for record in reader.get_high_watermark_allocation_records(
+            merge_threads=not current_thread_only
+        )
+        if not current_thread_only or record.tid == reader.metadata.main_thread_id
+    ]
     max_memory = parse_memory_string(limit)
     total_allocated_memory = sum(record.size for record in allocations)
 
@@ -225,14 +230,19 @@ def limit_leaks(
     location_limit: str,
     *,
     filter_fn: Optional[LeaksFilterFunction] = None,
+    current_thread_only: bool = False,
     _result_file: Path,
     _config: Config,
     _test_id: str,
 ) -> _LeakedInfo | None:
     reader = FileReader(_result_file)
-    allocations: list[AllocationRecord] = list(
-        reader.get_leaked_allocation_records(merge_threads=True)
-    )
+    allocations: list[AllocationRecord] = [
+        record
+        for record in reader.get_leaked_allocation_records(
+            merge_threads=not current_thread_only
+        )
+        if not current_thread_only or record.tid == reader.metadata.main_thread_id
+    ]
 
     memory_limit = parse_memory_string(location_limit)
 

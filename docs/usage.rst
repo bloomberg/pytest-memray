@@ -35,7 +35,7 @@ This plugin provides `markers <https://docs.pytest.org/en/latest/example/markers
 that can be used to enforce additional checks and validations on tests.
 
 
-.. py:function:: pytest.mark.limit_memory(memory_limit: str)
+.. py:function:: pytest.mark.limit_memory(memory_limit: str, current_thread_only: bool = False)
 
     Fail the execution of the test if the test allocates more peak memory than allowed.
 
@@ -46,6 +46,10 @@ that can be used to enforce additional checks and validations on tests.
 
     The format for the string is ``<NUMBER> ([KMGTP]B|B)``. The marker will raise
     ``ValueError`` if the string format cannot be parsed correctly.
+
+    If the optional keyword-only argument ``current_thread_only`` is set to *True*, the
+    plugin will only track memory allocations made by the current thread and all other
+    allocations will be ignored.
 
     .. warning::
 
@@ -63,7 +67,7 @@ that can be used to enforce additional checks and validations on tests.
             pass  # do some stuff that allocates memory
 
 
-.. py:function:: pytest.mark.limit_leaks(location_limit: str, filter_fn: LeaksFilterFunction | None = None)
+.. py:function:: pytest.mark.limit_leaks(location_limit: str, filter_fn: LeaksFilterFunction | None = None, current_thread_only: bool = False)
 
     Fail the execution of the test if any call stack in the test leaks more memory than
     allowed.
@@ -95,6 +99,10 @@ that can be used to enforce additional checks and validations on tests.
     associated with the stack it was called with will be ignored. If all leaks are
     ignored, the test will not fail. This can be used to discard any known false
     positives.
+
+    If the optional keyword-only argument ``current_thread_only`` is set to *True*, the
+    plugin will only track memory allocations made by the current thread and all other
+    allocations will be ignored.
 
     .. tip::
 
