@@ -2,6 +2,7 @@ Configuration
 =============
 
 This plugin provides a clean minimal set of command line options that are added to pytest.
+You can also specify most options in `pytest.ini` file.
 The complete list of command line options is:
 
 .. tab:: Command line options
@@ -38,8 +39,8 @@ The complete list of command line options is:
   ``memray(bool)``
     Activate memray tracking.
 
-  ``most-allocations(string)``
-    Show the N tests that allocate most memory (N=0 for all).
+  ``most_allocations(int)``
+    Show the N tests that allocate most memory (N=0 for all, default=5).
 
   ``hide_memray_summary(bool)``
     Hide the memray summary at the end of the execution.
@@ -53,5 +54,5 @@ The complete list of command line options is:
   ``trace_python_allocators(bool)``
     Record allocations made by the Pymalloc allocator (will be slower)
 
-  ``--fail-on-increase(bool)``
+  ``fail-on-increase(bool)``
     Fail a test with the limit_memory marker if it uses more memory than its last successful run
