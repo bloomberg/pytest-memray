@@ -7,6 +7,7 @@ import math
 import os
 import pickle
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass
 from itertools import islice
 from pathlib import Path
@@ -178,39 +179,50 @@ class Manager:
         if markers and "limit_leaks" in markers:
             native = trace_python_allocators = True
 
-        @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> object | None:
-            test_result: object | Any = None
-            try:
-                result_file = _build_bin_path()
-                with Tracker(
-                    result_file,
-                    native_traces=native,
-                    trace_python_allocators=trace_python_allocators,
-                    file_format=FileFormat.AGGREGATED_ALLOCATIONS,
-                ):
-                    test_result = func(*args, **kwargs)
-                try:
-                    metadata = FileReader(result_file).metadata
-                except OSError:
-                    return None
-                result = Result(pyfuncitem.nodeid, metadata, result_file)
-                metadata_path = (
-                    self.result_metadata_path
-                    / result_file.with_suffix(".metadata").name
-                )
-                with open(metadata_path, "wb") as file_handler:
-                    pickle.dump(result, file_handler)
-                self.results[pyfuncitem.nodeid] = result
-            finally:
-                # Restore the original function. This is needed because some
-                # pytest plugins (e.g. flaky) will call our pytest_pyfunc_call
-                # hook again with whatever is here, which will cause the wrapper
-                # to be wrapped again.
-                pyfuncitem.obj = func
-            return test_result
+        @contextmanager
+        def memory_reporting() -> Generator[None, None, None]:
+            # Restore the original function. This is needed because some
+            # pytest plugins (e.g. flaky) will call our pytest_pyfunc_call
+            # hook again with whatever is here, which will cause the wrapper
+            # to be wrapped again.
+            pyfuncitem.obj = func
 
-        pyfuncitem.obj = wrapper
+            result_file = _build_bin_path()
+            with Tracker(
+                result_file,
+                native_traces=native,
+                trace_python_allocators=trace_python_allocators,
+                file_format=FileFormat.AGGREGATED_ALLOCATIONS,
+            ):
+                yield
+
+            try:
+                metadata = FileReader(result_file).metadata
+            except OSError:
+                return
+            result = Result(pyfuncitem.nodeid, metadata, result_file)
+            metadata_path = (
+                self.result_metadata_path / result_file.with_suffix(".metadata").name
+            )
+            with open(metadata_path, "wb") as file_handler:
+                pickle.dump(result, file_handler)
+            self.results[pyfuncitem.nodeid] = result
+
+        @functools.wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            with memory_reporting():
+                return func(*args, **kwargs)
+
+        @functools.wraps(func)
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+            with memory_reporting():
+                return await func(*args, **kwargs)
+
+        if inspect.iscoroutinefunction(func):
+            pyfuncitem.obj = async_wrapper
+        else:
+            pyfuncitem.obj = wrapper
+
         yield
 
     @hookimpl(hookwrapper=True)
