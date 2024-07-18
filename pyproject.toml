@@ -37,6 +37,7 @@ optional-dependencies.lint = [
   "mypy==0.991",
 ]
 optional-dependencies.test = [
+  "anyio>=4.4.0",
   "covdefaults>=2.2.2",
   "pytest>=7.2",
   "coverage>=7.0.5",

@@ -918,3 +918,37 @@ def test_leaks_in_current_thread(pytester: Pytester) -> None:
     result = pytester.runpytest("--memray")
 
     assert result.ret == ExitCode.OK
+
+
+def test_running_async_tests_with_anyio(pytester: Pytester) -> None:
+    xml_output_file = pytester.makefile(".xml", "")
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        @pytest.fixture
+        def anyio_backend():
+            return 'asyncio'
+
+        @pytest.mark.limit_leaks("5KB")
+        @pytest.mark.anyio
+        async def test_memory_alloc_fails():
+            for _ in range(10):
+                allocator.valloc(1024*10)
+                # No free call here
+        """
+    )
+
+    result = pytester.runpytest("--junit-xml", xml_output_file)
+
+    assert result.ret != ExitCode.OK
+
+    root = ET.parse(str(xml_output_file)).getroot()
+    for testcase in root.iter("testcase"):
+        failure = testcase.find("failure")
+        assert failure.text == (
+            "Test was allowed to leak 5.0KiB per location"
+            " but at least one location leaked more"
+        )
