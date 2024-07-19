@@ -2,7 +2,7 @@ Configuration
 =============
 
 This plugin provides a clean minimal set of command line options that are added to pytest.
-You can also specify most options in `pytest.ini` file.
+You can also specify most options in ``pytest.ini`` file.
 The complete list of command line options is:
 
 .. tab:: Command line options
