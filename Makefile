@@ -47,7 +47,7 @@ format:  ## Autoformat all files
 lint:  ## Lint all files
 	$(PYTHON) -m ruff check $(python_files)
 	$(PYTHON) -m black --check --diff $(python_files)
-	$(PYTHON) -m mypy src/pytest_memray --ignore-missing-imports
+	$(PYTHON) -m mypy src/pytest_memray
 
 .PHONY: docs
 docs:  ## Generate documentation
