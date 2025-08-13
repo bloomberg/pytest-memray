@@ -117,8 +117,10 @@ type = [
 ]
 
 [tool.ruff]
-ignore = ['E501']
 line-length = 95
+
+[tool.ruff.lint]
+ignore = ['E501']
 select = [
     'E',
     'F',
