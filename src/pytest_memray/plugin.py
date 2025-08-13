@@ -56,8 +56,7 @@ class PluginFn(Protocol):
         _config: Config,
         _test_id: str,
         **kwargs: Any,
-    ) -> SectionMetadata | None:
-        ...
+    ) -> SectionMetadata | None: ...
 
 
 MARKERS = {
