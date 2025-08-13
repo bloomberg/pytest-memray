@@ -5,6 +5,13 @@ Release History
 
 .. towncrier release notes start
 
+v1.8.0 (2025-08-13)
+-------------------
+
+Features - 1.8.0
+~~~~~~~~~~~~~~~~
+- Python 3.14 is now officially supported. (:issue:`118`)
+
 v1.7.0 (2024-07-25)
 -------------------
 
