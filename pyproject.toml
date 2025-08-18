@@ -31,10 +31,10 @@ optional-dependencies.docs = [
   "towncrier>=22.12",
 ]
 optional-dependencies.lint = [
-  "black==22.12",
-  "ruff==0.0.272",
-  "isort==5.11.4",
-  "mypy==0.991",
+  "black==25.1.0",
+  "ruff==0.12.7",
+  "isort==6.0.1",
+  "mypy==1.17.1",
 ]
 optional-dependencies.test = [
   "anyio>=4.4.0",
@@ -53,6 +53,9 @@ classifiers = [
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: Implementation :: CPython",
   "Topic :: Software Development :: Debuggers",
 ]
@@ -117,8 +120,10 @@ type = [
 ]
 
 [tool.ruff]
-ignore = ['E501']
 line-length = 95
+
+[tool.ruff.lint]
+ignore = ['E501']
 select = [
     'E',
     'F',

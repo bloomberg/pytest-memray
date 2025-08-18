@@ -56,8 +56,7 @@ class PluginFn(Protocol):
         _config: Config,
         _test_id: str,
         **kwargs: Any,
-    ) -> SectionMetadata | None:
-        ...
+    ) -> SectionMetadata | None: ...
 
 
 MARKERS = {
@@ -143,7 +142,7 @@ class Manager:
             del os.environ["MEMRAY_RESULT_PATH"]
 
     @hookimpl(hookwrapper=True)
-    def pytest_pyfunc_call(self, pyfuncitem: Function) -> object | None:
+    def pytest_pyfunc_call(self, pyfuncitem: Function) -> Iterable[None]:
         func = pyfuncitem.obj
 
         markers = {
