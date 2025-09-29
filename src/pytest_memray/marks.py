@@ -267,9 +267,95 @@ def limit_leaks(
     )
 
 
+# How many distinct types and individual objects to show in a leak report,
+# and the maximum length of each object's repr() before it is truncated.
+_MAX_REPORTED_TYPES = 10
+_MAX_REPORTED_SAMPLES = 10
+_MAX_REPR_LEN = 100
+
+
+@dataclass
+class _TrackedObjectsInfo:  # pragma: no cover
+    """Type that holds information about objects that survived tracking."""
+
+    surviving_objects: list[object]
+
+    @property
+    def section(self) -> PytestSection:
+        """Return a tuple in the format expected by section reporters."""
+        body = self._generate_section_text()
+        return (
+            "memray-tracked-objects",
+            "List of leaked objects:\n" + body,
+        )
+
+    @property
+    def long_repr(self) -> str:
+        """Generate a longrepr user-facing error message."""
+        return f"Test leaked {len(self.surviving_objects)} objects"
+
+    def _generate_section_text(self) -> str:
+        """Generate a text summary of leaked objects."""
+        from collections import Counter
+
+        # Group objects by type
+        type_counts = Counter(type(obj).__name__ for obj in self.surviving_objects)
+
+        text_lines = []
+        padding = " " * 4
+
+        # Show top object types that leaked
+        text_lines.append(
+            f"{padding}Object types that leaked (total: {len(self.surviving_objects)} objects):"
+        )
+        top_types = type_counts.most_common(_MAX_REPORTED_TYPES)
+        max_count_len = max(len(str(count)) for _, count in top_types)
+        for obj_type, count in top_types:
+            text_lines.append(
+                f"{padding*2}- {count:>{max_count_len}} {obj_type} instance(s)"
+            )
+        if len(type_counts) > _MAX_REPORTED_TYPES:
+            text_lines.append(
+                f"{padding*2}... and {len(type_counts) - _MAX_REPORTED_TYPES} more types"
+            )
+
+        # Show a sample of the actual objects
+        text_lines.append(f"\n{padding}Sample of leaked objects:")
+        for obj in self.surviving_objects[:_MAX_REPORTED_SAMPLES]:
+            try:
+                obj_repr = repr(obj)
+            except Exception:
+                obj_repr = "<repr failed>"
+
+            # Truncate long representations
+            if len(obj_repr) > _MAX_REPR_LEN:
+                obj_repr = obj_repr[: _MAX_REPR_LEN - 3] + "..."
+            text_lines.append(f"{padding*2}- {type(obj).__name__}: {obj_repr}")
+
+        if len(self.surviving_objects) > _MAX_REPORTED_SAMPLES:
+            extra = len(self.surviving_objects) - _MAX_REPORTED_SAMPLES
+            text_lines.append(f"{padding*2}... and {extra} more")
+
+        return "\n".join(text_lines)
+
+
+def track_leaked_objects(  # pragma: no cover
+    _result_file: Path,
+    _config: Config,
+    _test_id: str,
+    _surviving_objects: list[object] | None = None,
+) -> _TrackedObjectsInfo | None:
+    """Track objects that survive the test execution."""
+    if not _surviving_objects:
+        return None
+
+    return _TrackedObjectsInfo(surviving_objects=_surviving_objects)
+
+
 __all__ = [
     "limit_memory",
     "limit_leaks",
+    "limit_leaked_objects",
     "LeaksFilterFunction",
     "Stack",
     "StackFrame",

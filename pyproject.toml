@@ -20,7 +20,7 @@ maintainers = [
 requires-python = ">=3.8"
 dependencies = [
   "pytest>=7.2",
-  "memray>=1.12",
+  "memray>=1.19.1",
 ]
 dynamic = ["version"]
 classifiers = [
@@ -81,6 +81,11 @@ run.dynamic_context = "test_function"
 run.source = ["pytest_memray", "tests"]
 run.plugins = ["covdefaults"]
 run.parallel = true
+# The object tracking feature only runs on Python 3.13.3+, which is not the
+# interpreter used by the coverage job, so it would otherwise be reported as
+# uncovered. The feature code carries "# pragma: no cover" and its test module
+# is omitted here; both are intentional, not an oversight.
+run.omit = ["tests/test_object_tracking.py"]
 report.fail_under = 97
 html.show_contexts = true
 html.skip_covered = false
