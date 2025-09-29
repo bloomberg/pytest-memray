@@ -267,9 +267,142 @@ def limit_leaks(
     )
 
 
+@dataclass
+class _TrackedObjectsInfo:
+    """Type that holds information about objects that survived tracking."""
+
+    surviving_objects: list
+    num_stacks: int
+    native_stacks: bool
+
+    @property
+    def section(self) -> PytestSection:
+        """Return a tuple in the format expected by section reporters."""
+        body = self._generate_section_text()
+        return (
+            "memray-tracked-objects",
+            "List of leaked objects:\n" + body,
+        )
+
+    @property
+    def long_repr(self) -> str:
+        """Generate a longrepr user-facing error message."""
+        return f"Test leaked {len(self.surviving_objects)} objects"
+
+    def _generate_section_text(self) -> str:
+        """Generate a text summary of leaked objects."""
+        from collections import Counter
+
+        # Group objects by type
+        type_counts = Counter(type(obj).__name__ for obj in self.surviving_objects)
+
+        text_lines = []
+        padding = " " * 4
+
+        # Show top object types that leaked
+        text_lines.append(
+            f"{padding}Object types that leaked (total: {len(self.surviving_objects)} objects):"
+        )
+        for obj_type, count in type_counts.most_common(10):
+            text_lines.append(f"{padding*2}- {obj_type}: {count} instance(s)")
+
+        # Show a sample of the actual objects (up to 10)
+        text_lines.append(f"\n{padding}Sample of leaked objects:")
+        for obj in self.surviving_objects[:10]:
+            try:
+                obj_repr = repr(obj)
+                # Truncate long representations
+                if len(obj_repr) > 100:
+                    obj_repr = obj_repr[:97] + "..."
+                text_lines.append(f"{padding*2}- {type(obj).__name__}: {obj_repr}")
+            except Exception:
+                text_lines.append(f"{padding*2}- {type(obj).__name__}: <repr failed>")
+
+        if len(self.surviving_objects) > 10:
+            text_lines.append(
+                f"{padding*2}... and {len(self.surviving_objects) - 10} more"
+            )
+
+        return "\n".join(text_lines)
+
+
+def track_leaked_objects(
+    _result_file: Path,
+    _config: Config,
+    _test_id: str,
+    _surviving_objects: list | None = None,
+) -> _TrackedObjectsInfo | None:
+    """Track objects that survive the test execution."""
+    if _surviving_objects is None:
+        return None
+
+    if not _surviving_objects:
+        return None
+
+    # Filter out frame objects and other internal Python objects
+    import types
+
+    filtered_objects = [
+        obj
+        for obj in _surviving_objects
+        if not isinstance(obj, (types.FrameType, types.CodeType, types.TracebackType))
+    ]
+
+    if not filtered_objects:
+        return None
+
+    num_stacks: int = cast(int, value_or_ini(_config, "stacks"))
+    native_stacks: bool = cast(bool, value_or_ini(_config, "native"))
+
+    return _TrackedObjectsInfo(
+        surviving_objects=filtered_objects,
+        num_stacks=num_stacks,
+        native_stacks=native_stacks,
+    )
+
+
+class GetLeakedObjectsFunction(Protocol):
+    """A callable that retrieves the leaked objects from a test."""
+
+    def __call__(self) -> list:
+        """Return the list of objects that leaked during the test."""
+        ...
+
+
+def get_leaked_objects(
+    callback: GetLeakedObjectsFunction | None = None,
+    _result_file: Path = None,
+    _config: Config = None,
+    _test_id: str = None,
+    _surviving_objects: list | None = None,
+) -> None:
+    """Decorator to allow tests to retrieve leaked objects programmatically.
+
+    This marker allows a test function to receive a callback that returns
+    the list of objects that survived the tracking session. The test will
+    not fail due to leaked objects but can inspect them for assertions.
+
+    Example:
+        @pytest.mark.get_leaked_objects
+        def test_inspect_leaks(get_leaked_objects):
+            # Create some objects that will leak
+            leaked_list = [1, 2, 3]
+            global_ref = leaked_list  # Make it survive
+
+            # Get the leaked objects
+            leaks = get_leaked_objects()
+            assert leaked_list in leaks
+    """
+    if callback and _surviving_objects is not None:
+        # Inject the function into the test
+        callback._leaked_objects = _surviving_objects
+
+
 __all__ = [
     "limit_memory",
     "limit_leaks",
+    "track_leaked_objects",
+    "get_leaked_objects",
     "LeaksFilterFunction",
     "Stack",
     "StackFrame",

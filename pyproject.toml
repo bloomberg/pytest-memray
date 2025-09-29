@@ -20,7 +20,7 @@ maintainers = [
 requires-python = ">=3.8"
 dependencies = [
   "pytest>=7.2",
-  "memray>=1.12",
+  "memray>=1.19.1",
 ]
 optional-dependencies.docs = [
   "furo>=2022.12.7",

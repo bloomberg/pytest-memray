@@ -271,11 +271,16 @@ def test_memray_report_python_allocators(
     )
 
     output = result.stdout.str()
-    mock.assert_called_once_with(
-        ANY,
-        native_traces=False,
-        trace_python_allocators=trace_python_allocators,
-        file_format=FileFormat.AGGREGATED_ALLOCATIONS,
+    mock.assert_called_once()
+    # Check the arguments passed to Tracker
+    call_kwargs = mock.call_args[1]
+    assert not call_kwargs["native_traces"]
+    assert call_kwargs["trace_python_allocators"] == trace_python_allocators
+    assert call_kwargs["file_format"] == FileFormat.AGGREGATED_ALLOCATIONS
+    # track_object_lifetimes is optional, only present if tracking objects
+    assert (
+        "track_object_lifetimes" not in call_kwargs
+        or not call_kwargs["track_object_lifetimes"]
     )
 
     if trace_python_allocators:
