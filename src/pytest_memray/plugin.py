@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import collections
 import functools
+import gc
 import inspect
 import math
 import os
 import pickle
+import sys
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -34,10 +36,12 @@ from pytest import Function
 from pytest import Item
 from pytest import Parser
 from pytest import TestReport
+from pytest import UsageError
 from pytest import hookimpl
 
 from .marks import limit_memory
 from .marks import limit_leaks
+from .marks import limit_leaked_objects
 from .utils import WriteEnabledDirectoryAction
 from .utils import positive_int
 from .utils import sizeof_fmt
@@ -62,6 +66,7 @@ class PluginFn(Protocol):
 MARKERS = {
     "limit_memory": limit_memory,
     "limit_leaks": limit_leaks,
+    "limit_leaked_objects": limit_leaked_objects,
 }
 
 N_TOP_ALLOCS = 5
@@ -108,6 +113,7 @@ class Result:
 class Manager:
     def __init__(self, config: Config) -> None:
         self.results: dict[str, Result] = {}
+        self.surviving_objects: dict[str, list[object]] = {}  # Store separately
         self.config = config
         path: Path | None = config.getvalue("memray_bin_path")
         self._tmp_dir: None | TemporaryDirectory[str] = None
@@ -140,6 +146,23 @@ class Manager:
             self._tmp_dir.cleanup()
         if os.environ.get("MEMRAY_RESULT_PATH"):
             del os.environ["MEMRAY_RESULT_PATH"]
+
+    @hookimpl
+    def pytest_collection_modifyitems(self, config: Config, items: list[Item]) -> None:
+        # The limit_leaked_objects marker requires Python 3.13.3+. Fail at
+        # collection time (as documented) rather than letting the test run and
+        # error during the call phase.
+        if sys.version_info >= (3, 13, 3):
+            return
+        for item in items:  # pragma: no cover
+            if any(
+                marker.name == "limit_leaked_objects" for marker in item.iter_markers()
+            ):
+                raise UsageError(
+                    "The limit_leaked_objects marker requires Python 3.13.3 "
+                    "or later. Current version: "
+                    f"{'.'.join(map(str, sys.version_info[:3]))}"
+                )
 
     @hookimpl(hookwrapper=True)
     def pytest_pyfunc_call(self, pyfuncitem: Function) -> Iterable[None]:
@@ -178,8 +201,12 @@ class Manager:
         if markers and "limit_leaks" in markers:
             native = trace_python_allocators = True
 
+        # Object tracking requires Python 3.13.3+; this is enforced at
+        # collection time (see pytest_collection_modifyitems).
+        track_objects = "limit_leaked_objects" in markers
+
         @contextmanager
-        def memory_reporting() -> Generator[None, None, None]:
+        def memory_reporting() -> Generator[Tuple[Tracker, bool], None, None]:
             # Restore the original function. This is needed because some
             # pytest plugins (e.g. flaky) will call our pytest_pyfunc_call
             # hook again with whatever is here, which will cause the wrapper
@@ -187,13 +214,24 @@ class Manager:
             pyfuncitem.obj = func
 
             result_file = _build_bin_path()
-            with Tracker(
-                result_file,
-                native_traces=native,
-                trace_python_allocators=trace_python_allocators,
-                file_format=FileFormat.AGGREGATED_ALLOCATIONS,
-            ):
-                yield
+            tracker_kwargs = {
+                "native_traces": native,
+                "trace_python_allocators": trace_python_allocators,
+                "file_format": FileFormat.AGGREGATED_ALLOCATIONS,
+            }
+
+            # Add track_object_lifetimes if tracking objects
+            if track_objects:  # pragma: no cover
+                tracker_kwargs["track_object_lifetimes"] = True
+
+            # mypy can't resolve the overload when using **kwargs unpacking
+            tracker = Tracker(result_file, **tracker_kwargs)  # type: ignore[call-overload]
+            yield (tracker, track_objects)
+
+            # Get surviving objects if tracking was enabled
+            surviving_objects = None
+            if track_objects:  # pragma: no cover
+                surviving_objects = list(tracker.get_surviving_objects())
 
             try:
                 metadata = FileReader(result_file).metadata
@@ -207,15 +245,34 @@ class Manager:
                 pickle.dump(result, file_handler)
             self.results[pyfuncitem.nodeid] = result
 
+            # Store surviving objects separately (they can't be pickled)
+            if surviving_objects is not None:  # pragma: no cover
+                self.surviving_objects[pyfuncitem.nodeid] = surviving_objects
+
+        def _settle_tracked_objects(track_objects: bool) -> None:
+            # Collect cycles and drop interpreter-internal caches so that
+            # objects kept alive only by them aren't reported as leaks.
+            if track_objects:
+                gc.collect()
+                sys._clear_internal_caches()  # type: ignore[attr-defined]
+
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            with memory_reporting():
-                return func(*args, **kwargs)
+            with memory_reporting() as (tracker, track_objects):
+                with tracker:
+                    try:
+                        return func(*args, **kwargs)
+                    finally:
+                        _settle_tracked_objects(track_objects)
 
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            with memory_reporting():
-                return await func(*args, **kwargs)
+            with memory_reporting() as (tracker, track_objects):
+                with tracker:
+                    try:
+                        return await func(*args, **kwargs)
+                    finally:
+                        _settle_tracked_objects(track_objects)
 
         if inspect.iscoroutinefunction(func):
             pyfuncitem.obj = async_wrapper
@@ -244,9 +301,19 @@ class Manager:
             result = self.results.get(item.nodeid)
             if not result:
                 continue
+            # Pass surviving_objects for object tracking markers
+            kwargs = dict(marker.kwargs)
+            if marker.name == "limit_leaked_objects":  # pragma: no cover
+                # Pop rather than get: the Manager lives for the whole session,
+                # so keeping a reference here would hold every "leaked" object
+                # (and everything it references) alive until pytest exits.
+                surviving_objects = self.surviving_objects.pop(item.nodeid, None)
+                if surviving_objects is not None:
+                    kwargs["_surviving_objects"] = surviving_objects
+
             res = marker_fn(
                 *marker.args,
-                **marker.kwargs,
+                **kwargs,
                 _result_file=result.result_file,
                 _config=self.config,
                 _test_id=item.nodeid,
@@ -339,7 +406,11 @@ class Manager:
         writeln("\t 🥇 Biggest allocating functions:")
         sorted_records = sorted(records, key=lambda _record: _record.size, reverse=True)
         for record in islice(sorted_records, N_TOP_ALLOCS):
-            stack_trace = record.stack_trace()
+            try:
+                stack_trace = record.stack_trace()
+            except NotImplementedError:
+                # Stack traces for deallocations aren't captured
+                continue
             if not stack_trace:
                 continue
             (function, file, line), *_ = stack_trace
