@@ -113,7 +113,7 @@ class Result:
 class Manager:
     def __init__(self, config: Config) -> None:
         self.results: dict[str, Result] = {}
-        self.surviving_objects: dict[str, list] = {}  # Store separately
+        self.surviving_objects: dict[str, list[Any]] = {}  # Store separately
         self.config = config
         path: Path | None = config.getvalue("memray_bin_path")
         self._tmp_dir: None | TemporaryDirectory[str] = None
@@ -213,7 +213,7 @@ class Manager:
             if track_objects:
                 tracker_kwargs["track_object_lifetimes"] = True
 
-            tracker = Tracker(result_file, **tracker_kwargs)
+            tracker = Tracker(result_file, **tracker_kwargs)  # type: ignore[call-overload]
             with tracker:
                 yield
 

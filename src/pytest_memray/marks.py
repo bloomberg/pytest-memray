@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 from typing import Iterable
 from typing import Optional
 from typing import Protocol
@@ -271,7 +272,7 @@ def limit_leaks(
 class _TrackedObjectsInfo:
     """Type that holds information about objects that survived tracking."""
 
-    surviving_objects: list
+    surviving_objects: list[Any]
     num_stacks: int
     native_stacks: bool
 
@@ -330,7 +331,7 @@ def track_leaked_objects(
     _result_file: Path,
     _config: Config,
     _test_id: str,
-    _surviving_objects: list | None = None,
+    _surviving_objects: list[Any] | None = None,
 ) -> _TrackedObjectsInfo | None:
     """Track objects that survive the test execution."""
     if _surviving_objects is None:
@@ -364,17 +365,17 @@ def track_leaked_objects(
 class GetLeakedObjectsFunction(Protocol):
     """A callable that retrieves the leaked objects from a test."""
 
-    def __call__(self) -> list:
+    def __call__(self) -> list[Any]:
         """Return the list of objects that leaked during the test."""
         ...
 
 
 def get_leaked_objects(
     callback: GetLeakedObjectsFunction | None = None,
-    _result_file: Path = None,
-    _config: Config = None,
-    _test_id: str = None,
-    _surviving_objects: list | None = None,
+    _result_file: Optional[Path] = None,
+    _config: Optional[Config] = None,
+    _test_id: Optional[str] = None,
+    _surviving_objects: list[Any] | None = None,
 ) -> None:
     """Decorator to allow tests to retrieve leaked objects programmatically.
 
@@ -395,7 +396,7 @@ def get_leaked_objects(
     """
     if callback and _surviving_objects is not None:
         # Inject the function into the test
-        callback._leaked_objects = _surviving_objects
+        callback._leaked_objects = _surviving_objects  # type: ignore[attr-defined]
 
 
 __all__ = [
