@@ -21,9 +21,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - { "py": "3.14", "tox_env": "py314-cov" }
           - { "py": "3.14", "tox_env": "py314" }
           - { "py": "3.13", "tox_env": "py313" }
-          - { "py": "3.12", "tox_env": "py312-cov" }
           - { "py": "3.12", "tox_env": "py312" }
           - { "py": "3.11", "tox_env": "py311" }
           - { "py": "3.10", "tox_env": "py310" }
@@ -57,10 +57,10 @@ jobs:
           - docs
     steps:
       - uses: actions/checkout@v5
-      - name: setup Python 3.11
+      - name: setup Python 3.14
         uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.14"
       - name: Install prettier
         run: npm install -g prettier
       - name: install tox
