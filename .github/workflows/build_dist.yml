@@ -19,7 +19,7 @@ jobs:
     name: Source and wheel distributions
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Build distributions
         run: pipx run build[virtualenv] --sdist --wheel
