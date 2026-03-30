@@ -46,26 +46,37 @@ jobs:
       - name: run test suite ${{ matrix.tox_env }}
         run: tox --skip-pkg-install -e ${{ matrix.tox_env }}
 
-  check:
-    name: check ${{ matrix.tox_env }}
+  docs:
+    name: check docs
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        tox_env:
-          - lint
-          - docs
     steps:
       - uses: actions/checkout@v5
       - name: setup Python 3.11
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+      - name: install tox
+        run: python -m pip install tox
+      - name: install docs dependencies
+        run: tox -vv --notest -e docs
+      - name: check docs
+        run: tox --skip-pkg-install -e docs
+
+  lint:
+    name: lint
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      # mypy needs to be run with the oldest Python version we support.
+      - name: setup Python 3.8
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.8"
       - name: Install prettier
         run: npm install -g prettier
       - name: install tox
         run: python -m pip install tox
-      - name: setup test suite for ${{ matrix.tox_env }}
-        run: tox -vv --notest -e ${{ matrix.tox_env }}
-      - name: run test suite ${{ matrix.tox_env }}
-        run: tox --skip-pkg-install -e ${{ matrix.tox_env }}
+      - name: install lint dependencies
+        run: tox -vv --notest -e lint
+      - name: lint
+        run: tox --skip-pkg-install -e lint
