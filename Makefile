@@ -24,7 +24,7 @@ install-sdist: dist  ## Install from source distribution
 
 .PHONY: test-install
 test-install:  ## Install with test dependencies
-	$(ENV) $(PIP_INSTALL) -e .[test]
+	$(ENV) $(PIP_INSTALL) -e . --group test
 
 .PHONY: check
 check:
