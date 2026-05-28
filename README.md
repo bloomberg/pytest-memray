@@ -176,9 +176,12 @@ You must use your real name (sorry, no pseudonyms, and no anonymous contribution
 
 ### Development
 
-The project requires a Linux OS to work. To set up a DEV environment use tox (or
-directly the make targets). You can use Docker to run the test suite on non Linux as in
-(you can parametrize tox by passing additional arguments at the end):
+pytest-memray runs wherever [Memray](https://github.com/bloomberg/memray) is supported
+(Linux and macOS). To set up a development environment on either platform, use tox (or
+the Make targets directly).
+
+On other platforms you can run the test suite in Docker (you can parametrize tox by
+passing additional arguments at the end):
 
 ```shell
 docker-compose run --rm test tox
