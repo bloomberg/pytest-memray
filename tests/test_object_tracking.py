@@ -132,3 +132,5 @@ class TestObjectTracking:
         # Should show summary
         assert "dict" in output
         assert "instance(s)" in output
+        assert "... and " in output
+        assert " more" in output
