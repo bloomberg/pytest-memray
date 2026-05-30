@@ -50,10 +50,11 @@ class Stack:
 class LeaksFilterFunction(Protocol):
     """A callable that can decide whether to ignore some memory leaks.
 
-    This can be used to suppress leak reports from locations that are known to
-    leak. For instance, you might know that objects of a certain type are
-    cached by the code you're invoking, and so you might want to ignore all
-    reports of leaked memory allocated below that type's constructor.
+    This can be used with the `.limit_leaks` marker to suppress leak reports
+    from locations that are known to leak. For instance, you might know that
+    objects of a certain type are cached by the code you're invoking, and so
+    you might want to ignore all reports of leaked memory allocated below that
+    type's constructor.
 
     You can provide any callable with the following signature as the
     ``filter_fn`` keyword argument for the `.limit_leaks` marker:
@@ -64,6 +65,27 @@ class LeaksFilterFunction(Protocol):
 
         Return ``True`` if you want the leak to be reported, or ``False`` if
         you want it to be suppressed.
+        """
+        ...
+
+
+class LeakedObjectsFilterFunction(Protocol):
+    """A callable that can decide whether it's OK for some object to be leaked.
+
+    This can be used with the `.limit_leaked_objects` marker to suppress leak
+    reports for objects that are known to leak. For instance, you might know
+    that objects of a certain type are cached by the code you're invoking, and
+    so you might want to ignore all reports of leaked objects of that type.
+
+    You can provide any callable with the following signature as the
+    ``filter_fn`` keyword argument for the `.limit_leaked_objects` marker:
+    """
+
+    def __call__(self, obj: object) -> bool:
+        """Return whether a leak of this object should be reported.
+
+        Return ``True`` if you want the leak to be reported (causing the test
+        to fail), or ``False`` if you want it to be suppressed.
         """
         ...
 
@@ -339,13 +361,23 @@ class _TrackedObjectsInfo:  # pragma: no cover
         return "\n".join(text_lines)
 
 
-def track_leaked_objects(  # pragma: no cover
+def limit_leaked_objects(  # pragma: no cover
+    *,
+    filter_fn: Optional[LeakedObjectsFilterFunction] = None,
     _result_file: Path,
     _config: Config,
     _test_id: str,
     _surviving_objects: list[object] | None = None,
 ) -> _TrackedObjectsInfo | None:
     """Track objects that survive the test execution."""
+
+    if _surviving_objects is None:
+        _surviving_objects = []
+
+    _surviving_objects = [
+        obj for obj in _surviving_objects if not filter_fn or filter_fn(obj)
+    ]
+
     if not _surviving_objects:
         return None
 
