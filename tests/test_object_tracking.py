@@ -43,6 +43,66 @@ class TestObjectTracking:
         assert "list" in output
         assert "dict" in output
 
+    def test_ignoring_some_leaked_objects(self, pytester):
+        """Test that leaked objects can be ignored."""
+        pytester.makepyfile(
+            """
+            import pytest
+
+            def is_not_dict(obj: object) -> bool:
+                return not isinstance(obj, dict)
+
+            @pytest.mark.track_leaked_objects(filter_fn=is_not_dict)
+            def test_leak_objects():
+                # Create objects that will leak
+                leaked_list = [1, 2, 3, 4, 5]
+                leaked_dict = {"key": "value", "number": 42}
+
+                # Store them in the test instance to make them survive
+                test_leak_objects._leaked = [leaked_list, leaked_dict]
+            """
+        )
+
+        result = pytester.runpytest("--memray")
+
+        assert result.ret == pytest.ExitCode.TESTS_FAILED
+        output = result.stdout.str()
+
+        # Check that the report mentions leaked objects
+        assert "Test leaked" in output
+        assert "objects" in output
+        assert "Object types that leaked" in output
+        assert "list" in output
+        assert "dict" not in output
+
+    def test_ignoring_all_leaked_objects(self, pytester):
+        """Test that the test passes if all leaked objects are ignored."""
+        pytester.makepyfile(
+            """
+            import pytest
+
+            @pytest.mark.track_leaked_objects(filter_fn=lambda obj: False)
+            def test_leak_objects():
+                # Create objects that will leak
+                leaked_list = [1, 2, 3, 4, 5]
+                leaked_dict = {"key": "value", "number": 42}
+
+                # Store them in the test instance to make them survive
+                test_leak_objects._leaked = [leaked_list, leaked_dict]
+            """
+        )
+
+        result = pytester.runpytest("--memray")
+
+        assert result.ret == 0
+        output = result.stdout.str()
+
+        # Check that the report doesn't mention any leaked objects
+        assert "Test leaked" not in output
+        assert "Object types that leaked" not in output
+        assert "list" not in output
+        assert "dict" not in output
+
     def test_no_frames_leak(self, pytester):
         """Test that when no user objects leak, no frames survive either."""
         pytester.makepyfile(

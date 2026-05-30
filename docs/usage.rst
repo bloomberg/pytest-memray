@@ -154,7 +154,7 @@ that can be used to enforce additional checks and validations on tests.
        false-positive leak reports based on the call stack they're associated with.
 
 
-.. py:function:: pytest.mark.track_leaked_objects()
+.. py:function:: pytest.mark.track_leaked_objects(filter_fn: LeakedObjectsFilterFunction | None = None)
 
     Fail the execution of the test if any Python objects created while the test body
     runs are still alive at the end of the test.
@@ -164,6 +164,13 @@ that can be used to enforce additional checks and validations on tests.
     ``pytest.mark.skipif`` to prevent the test from running if the Python version is too
     old, or you can conditionally add the ``track_leaked_objects`` marker only if the
     Python version is new enough.
+
+    The marker takes an optional keyword-only argument ``filter_fn`` that can be used to
+    ignore certain leaked objects. This argument represents a filtering function that
+    will be called once for each object leaked by the test body. If it returns *True*,
+    leaks of that object will be included in the final report. If it returns *False*,
+    that leaked object will be ignored. If all leaks are ignored, the test will not
+    fail. This can be used to discard any known false positives.
 
     .. warning::
        It is **very** challenging to write tests that do not "leak" memory in some way,
@@ -185,4 +192,5 @@ that can be used to enforce additional checks and validations on tests.
        they can change from one Python version to another.
 
        Because of this, you will need to very carefully design your test to avoid
-       objects being cached.
+       objects being cached, or use the ``filter_fn`` argument to filter out
+       false-positive leak reports.
