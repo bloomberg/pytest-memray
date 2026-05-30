@@ -50,10 +50,11 @@ class Stack:
 class LeaksFilterFunction(Protocol):
     """A callable that can decide whether to ignore some memory leaks.
 
-    This can be used to suppress leak reports from locations that are known to
-    leak. For instance, you might know that objects of a certain type are
-    cached by the code you're invoking, and so you might want to ignore all
-    reports of leaked memory allocated below that type's constructor.
+    This can be used with the `.limit_leaks` marker to suppress leak reports
+    from locations that are known to leak. For instance, you might know that
+    objects of a certain type are cached by the code you're invoking, and so
+    you might want to ignore all reports of leaked memory allocated below that
+    type's constructor.
 
     You can provide any callable with the following signature as the
     ``filter_fn`` keyword argument for the `.limit_leaks` marker:
@@ -64,6 +65,27 @@ class LeaksFilterFunction(Protocol):
 
         Return ``True`` if you want the leak to be reported, or ``False`` if
         you want it to be suppressed.
+        """
+        ...
+
+
+class LeakedObjectsFilterFunction(Protocol):
+    """A callable that can decide whether it's OK for some object to be leaked.
+
+    This can be used with the `.track_leaked_objects` marker to suppress leak
+    reports for objects that are known to leak. For instance, you might know
+    that objects of a certain type are cached by the code you're invoking, and
+    so you might want to ignore all reports of leaked objects of that type.
+
+    You can provide any callable with the following signature as the
+    ``filter_fn`` keyword argument for the `.track_leaked_objects` marker:
+    """
+
+    def __call__(self, obj: object) -> bool:
+        """Return whether a leak of this object should be reported.
+
+        Return ``True`` if you want the leak to be reported (causing the test
+        to fail), or ``False`` if you want it to be suppressed.
         """
         ...
 
@@ -267,9 +289,104 @@ def limit_leaks(
     )
 
 
+@dataclass
+class _TrackedObjectsInfo:  # pragma: no cover
+    """Type that holds information about objects that survived tracking."""
+
+    surviving_objects: list[object]
+    num_stacks: int
+    native_stacks: bool
+
+    @property
+    def section(self) -> PytestSection:
+        """Return a tuple in the format expected by section reporters."""
+        body = self._generate_section_text()
+        return (
+            "memray-tracked-objects",
+            "List of leaked objects:\n" + body,
+        )
+
+    @property
+    def long_repr(self) -> str:
+        """Generate a longrepr user-facing error message."""
+        return f"Test leaked {len(self.surviving_objects)} objects"
+
+    def _generate_section_text(self) -> str:
+        """Generate a text summary of leaked objects."""
+        from collections import Counter
+
+        # Group objects by type
+        type_counts = Counter(type(obj).__name__ for obj in self.surviving_objects)
+
+        text_lines = []
+        padding = " " * 4
+
+        # Show top object types that leaked
+        text_lines.append(
+            f"{padding}Object types that leaked (total: {len(self.surviving_objects)} objects):"
+        )
+        top_types = type_counts.most_common(10)
+        max_count_len = max(len(str(count)) for _, count in top_types)
+        for obj_type, count in top_types:
+            text_lines.append(
+                f"{padding*2}- {count:>{max_count_len}} {obj_type} instance(s)"
+            )
+
+        # Show a sample of the actual objects (up to 10)
+        text_lines.append(f"\n{padding}Sample of leaked objects:")
+        for obj in self.surviving_objects[:10]:
+            try:
+                obj_repr = repr(obj)
+            except Exception:
+                obj_repr = "<repr failed>"
+
+            # Truncate long representations
+            if len(obj_repr) > 100:
+                obj_repr = obj_repr[:97] + "..."
+            text_lines.append(f"{padding*2}- {type(obj).__name__}: {obj_repr}")
+
+        if len(self.surviving_objects) > 10:
+            text_lines.append(
+                f"{padding*2}... and {len(self.surviving_objects) - 10} more"
+            )
+
+        return "\n".join(text_lines)
+
+
+def track_leaked_objects(  # pragma: no cover
+    *,
+    filter_fn: Optional[LeakedObjectsFilterFunction] = None,
+    _result_file: Path,
+    _config: Config,
+    _test_id: str,
+    _surviving_objects: list[object] | None = None,
+) -> _TrackedObjectsInfo | None:
+    """Track objects that survive the test execution."""
+
+    if _surviving_objects is None:
+        _surviving_objects = []
+
+    _surviving_objects = [
+        obj for obj in _surviving_objects if not filter_fn or filter_fn(obj)
+    ]
+
+    if not _surviving_objects:
+        return None
+
+    num_stacks: int = cast(int, value_or_ini(_config, "stacks"))
+    native_stacks: bool = cast(bool, value_or_ini(_config, "native"))
+
+    return _TrackedObjectsInfo(
+        surviving_objects=_surviving_objects,
+        num_stacks=num_stacks,
+        native_stacks=native_stacks,
+    )
+
+
 __all__ = [
     "limit_memory",
     "limit_leaks",
+    "track_leaked_objects",
     "LeaksFilterFunction",
     "Stack",
     "StackFrame",

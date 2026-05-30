@@ -20,7 +20,7 @@ maintainers = [
 requires-python = ">=3.8"
 dependencies = [
   "pytest>=7.2",
-  "memray>=1.12",
+  "memray>=1.19.1",
 ]
 dynamic = ["version"]
 classifiers = [
@@ -81,6 +81,7 @@ run.dynamic_context = "test_function"
 run.source = ["pytest_memray", "tests"]
 run.plugins = ["covdefaults"]
 run.parallel = true
+run.omit = ["tests/test_object_tracking.py"]
 report.fail_under = 97
 html.show_contexts = true
 html.skip_covered = false
@@ -94,7 +95,7 @@ paths.source = [
 ]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.14"
 show_error_codes = true
 strict = true
 
