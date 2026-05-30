@@ -43,8 +43,8 @@ class TestObjectTracking:
         assert "list" in output
         assert "dict" in output
 
-    def test_no_user_leak(self, pytester):
-        """Test that when no user objects leak, only internal frames survive."""
+    def test_no_frames_leak(self, pytester):
+        """Test that when no user objects leak, no frames survive either."""
         pytester.makepyfile(
             """
             import pytest
@@ -69,11 +69,8 @@ class TestObjectTracking:
 
         result = pytester.runpytest("--memray")
         output = result.stdout.str()
-        if result.ret == pytest.ExitCode.TESTS_FAILED:
-            # Only internal frame objects from tracking machinery should survive
-            assert "frame instance(s)" in output
-            assert "list" not in output
-            assert "dict" not in output
+        assert result.ret == 0
+        assert "instance(s)" not in output
 
     def test_complex_object_types(self, pytester):
         """Test tracking of various object types."""

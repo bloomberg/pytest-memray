@@ -191,7 +191,7 @@ class Manager:
             )
 
         @contextmanager
-        def memory_reporting() -> Generator[None, None, None]:
+        def memory_reporting() -> Generator[Tracker, None, None]:
             # Restore the original function. This is needed because some
             # pytest plugins (e.g. flaky) will call our pytest_pyfunc_call
             # hook again with whatever is here, which will cause the wrapper
@@ -211,8 +211,7 @@ class Manager:
 
             # mypy can't resolve the overload when using **kwargs unpacking
             tracker = Tracker(result_file, **tracker_kwargs)  # type: ignore[call-overload]
-            with tracker:
-                yield
+            yield tracker
 
             # Get surviving objects if tracking was enabled
             surviving_objects = None
@@ -237,13 +236,15 @@ class Manager:
 
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            with memory_reporting():
-                return func(*args, **kwargs)
+            with memory_reporting() as tracker:
+                with tracker:
+                    return func(*args, **kwargs)
 
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            with memory_reporting():
-                return await func(*args, **kwargs)
+            with memory_reporting() as tracker:
+                with tracker:
+                    return await func(*args, **kwargs)
 
         if inspect.iscoroutinefunction(func):
             pyfuncitem.obj = async_wrapper
