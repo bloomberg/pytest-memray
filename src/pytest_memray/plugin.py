@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 import functools
+import gc
 import inspect
 import math
 import os
@@ -191,7 +192,7 @@ class Manager:
             )
 
         @contextmanager
-        def memory_reporting() -> Generator[Tracker, None, None]:
+        def memory_reporting() -> Generator[Tuple[Tracker, bool], None, None]:
             # Restore the original function. This is needed because some
             # pytest plugins (e.g. flaky) will call our pytest_pyfunc_call
             # hook again with whatever is here, which will cause the wrapper
@@ -211,7 +212,7 @@ class Manager:
 
             # mypy can't resolve the overload when using **kwargs unpacking
             tracker = Tracker(result_file, **tracker_kwargs)  # type: ignore[call-overload]
-            yield tracker
+            yield (tracker, bool(track_objects))
 
             # Get surviving objects if tracking was enabled
             surviving_objects = None
@@ -236,15 +237,25 @@ class Manager:
 
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            with memory_reporting() as tracker:
+            with memory_reporting() as (tracker, track_objects):
                 with tracker:
-                    return func(*args, **kwargs)
+                    try:
+                        return func(*args, **kwargs)
+                    finally:
+                        if track_objects:
+                            gc.collect()
+                            sys._clear_internal_caches()  # type: ignore[attr-defined]
 
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            with memory_reporting() as tracker:
+            with memory_reporting() as (tracker, track_objects):
                 with tracker:
-                    return await func(*args, **kwargs)
+                    try:
+                        return await func(*args, **kwargs)
+                    finally:
+                        if track_objects:
+                            gc.collect()
+                            sys._clear_internal_caches()  # type: ignore[attr-defined]
 
         if inspect.iscoroutinefunction(func):
             pyfuncitem.obj = async_wrapper

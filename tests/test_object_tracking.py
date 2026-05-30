@@ -48,7 +48,6 @@ class TestObjectTracking:
         pytester.makepyfile(
             """
             import pytest
-            import gc
 
             @pytest.mark.track_leaked_objects
             def test_no_leak():
@@ -63,7 +62,6 @@ class TestObjectTracking:
                 # Force garbage collection
                 temp_list = None
                 temp_dict = None
-                gc.collect()
             """
         )
 
