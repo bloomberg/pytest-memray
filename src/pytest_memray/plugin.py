@@ -6,6 +6,7 @@ import inspect
 import math
 import os
 import pickle
+import sys
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -43,7 +44,6 @@ from .utils import WriteEnabledDirectoryAction
 from .utils import positive_int
 from .utils import sizeof_fmt
 from .utils import value_or_ini
-import sys
 
 
 class SectionMetadata(Protocol):
