@@ -152,3 +152,37 @@ that can be used to enforce additional checks and validations on tests.
        Because of this, you will almost certainly need to allow some small amount of
        leaked memory per call stack, or use the ``filter_fn`` argument to filter out
        false-positive leak reports based on the call stack they're associated with.
+
+
+.. py:function:: pytest.mark.track_leaked_objects()
+
+    Fail the execution of the test if any Python objects created while the test body
+    runs are still alive at the end of the test.
+
+    This is only possible for Python 3.13.3 and newer. Using this marker with older
+    Python versions will cause an error during test collection. You can use
+    ``pytest.mark.skipif`` to prevent the test from running if the Python version is too
+    old, or you can conditionally add the ``track_leaked_objects`` marker only if the
+    Python version is new enough.
+
+    .. warning::
+       It is **very** challenging to write tests that do not "leak" memory in some way,
+       due to circumstances beyond your control.
+
+       There are many caches inside the Python interpreter itself. Just a few examples:
+
+       - The `re` module caches compiled regexes.
+       - The `logging` module caches whether a given log level is active for
+         a particular logger the first time you try to log something at that level.
+
+       There are many more such caches. Also, within pytest, any message that you log or
+       print is captured, so that it can be included in the output if the test fails.
+
+       Memray sees these all as "leaks", because something was allocated while the test
+       ran and it was not freed by the time the test body finished. We don't know that
+       it's due to an implementation detail of the standard library or pytest that the
+       memory wasn't freed. Morever, because these caches are implementation details,
+       they can change from one Python version to another.
+
+       Because of this, you will need to very carefully design your test to avoid
+       objects being cached.
