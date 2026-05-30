@@ -315,12 +315,13 @@ class _TrackedObjectsInfo:  # pragma: no cover
         for obj in self.surviving_objects[:10]:
             try:
                 obj_repr = repr(obj)
-                # Truncate long representations
-                if len(obj_repr) > 100:
-                    obj_repr = obj_repr[:97] + "..."
-                text_lines.append(f"{padding*2}- {type(obj).__name__}: {obj_repr}")
             except Exception:
-                text_lines.append(f"{padding*2}- {type(obj).__name__}: <repr failed>")
+                obj_repr = "<repr failed>"
+
+            # Truncate long representations
+            if len(obj_repr) > 100:
+                obj_repr = obj_repr[:97] + "..."
+            text_lines.append(f"{padding*2}- {type(obj).__name__}: {obj_repr}")
 
         if len(self.surviving_objects) > 10:
             text_lines.append(
