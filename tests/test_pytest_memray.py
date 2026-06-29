@@ -204,6 +204,84 @@ def test_memray_report_limit_number_stacks(num_stacks: int, pytester: Pytester) 
     assert num_rec_frames == min(num_stacks - 1, 10)
 
 
+@pytest.mark.parametrize(
+    "extra_args, expect_allocations",
+    [
+        (["-q"], False),
+        ([], True),
+        (["-v"], True),
+        (["-vv"], True),
+        (["-vvv"], True),
+        (["-o", "verbosity_memray=2"], True),
+        (["-vv", "-o", "verbosity_memray=-1"], False),
+    ],
+)
+def test_limit_memory_allocation_list_visibility(
+    pytester: Pytester, extra_args: list[str], expect_allocations: bool
+) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        @pytest.mark.limit_memory("1KB")
+        def test_foo():
+            allocator.valloc(1024 * 4)
+            allocator.free()
+        """
+    )
+
+    result = pytester.runpytest("--memray", *extra_args)
+    assert result.ret == ExitCode.TESTS_FAILED
+    stacks = extract_stacks(result.stdout.str())
+    assert bool(stacks) is expect_allocations
+
+
+@pytest.mark.parametrize(
+    "extra_args, expect_all",
+    [
+        ([], False),
+        (["-v"], False),
+        (["-vv"], True),
+    ],
+)
+def test_limit_memory_allocation_list_truncation(
+    pytester: Pytester, extra_args: list[str], expect_all: bool
+) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+
+        def rec(n, allocators):
+            a = MemoryAllocator()
+            a.valloc(1024)
+            allocators.append(a)
+            if n > 1:
+                rec(n - 1, allocators)
+
+        @pytest.mark.limit_memory("1KB")
+        def test_foo():
+            allocators = []
+            rec(15, allocators)
+            for a in allocators:
+                a.free()
+        """
+    )
+
+    result = pytester.runpytest(*extra_args)
+    assert result.ret == ExitCode.TESTS_FAILED
+    output = result.stdout.str()
+    stacks = extract_stacks(output)
+    if expect_all:
+        assert len(stacks) > 10
+        assert "...and" not in output
+    else:
+        assert len(stacks) == 10
+        assert "...and" in output
+
+
 @pytest.mark.parametrize("native", [True, False])
 def test_memray_report_native(native: bool, pytester: Pytester) -> None:
     pytester.makepyfile(

@@ -1,0 +1,1 @@
+Drop support for pytest 7.x, which was superseded in January 2024.

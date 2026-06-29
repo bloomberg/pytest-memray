@@ -50,7 +50,7 @@ from .utils import value_or_ini
 
 class SectionMetadata(Protocol):
     long_repr: str
-    section: Tuple[str, str]
+    section: Tuple[str, str] | None
 
 
 class PluginFn(Protocol):
@@ -321,7 +321,8 @@ class Manager:
             if res:
                 report.outcome = "failed"
                 report.longrepr = res.long_repr
-                report.sections.append(res.section)
+                if res.section is not None:
+                    report.sections.append(res.section)
                 outcome.force_result(report)
         return None
 
@@ -501,6 +502,17 @@ def pytest_addoption(parser: Parser) -> None:
         "fail-on-increase",
         help="Fail a test with the limit_memory marker if it uses more memory than its last successful run",
         type="bool",
+    )
+    parser.addini(
+        "verbosity_memray",
+        help=(
+            "Verbosity level for limit_memory failure reports. "
+            "At negative levels the limit_memory marker only reports a summary, "
+            "at level 0 or 1 it shows the top 10 allocations by size, "
+            "from level 2 up it shows all allocations. The default follows pytest's "
+            "-v / -q flags (with 0 as the default if neither are given)."
+        ),
+        default="auto",
     )
     help_msg = "Show the N tests that allocate most memory (N=0 for all)"
     parser.addini("most_allocations", help_msg)

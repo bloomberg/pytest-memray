@@ -99,13 +99,22 @@ class _MemoryInfo:
     num_stacks: int
     native_stacks: bool
     total_allocated_memory: int
+    verbosity: int
 
     @property
-    def section(self) -> PytestSection:
+    def section(self) -> Optional[PytestSection]:
         """Return a tuple in the format expected by section reporters."""
-        body = _generate_section_text(
-            self.allocations, self.native_stacks, self.num_stacks
-        )
+        if self.verbosity < 0:
+            return None
+        if self.verbosity >= 2:
+            allocations = self.allocations
+        else:
+            allocations = sorted(self.allocations, key=lambda r: r.size, reverse=True)
+            allocations = allocations[:10]
+        body = _generate_section_text(allocations, self.native_stacks, self.num_stacks)
+        remaining = len(self.allocations) - len(allocations)
+        if remaining > 0:
+            body += f"\n    ...and {remaining} more"
         return (
             "memray-max-memory",
             "List of allocations:\n" + body,
@@ -245,6 +254,7 @@ def limit_memory(
         num_stacks=num_stacks,
         native_stacks=native_stacks,
         total_allocated_memory=total_allocated_memory,
+        verbosity=_config.get_verbosity("memray"),
     )
 
 
