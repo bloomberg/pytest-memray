@@ -19,7 +19,7 @@ maintainers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-  "pytest>=7.2",
+  "pytest>=8.0",
   "memray>=1.19.1",
 ]
 dynamic = ["version"]
@@ -60,7 +60,7 @@ lint = [
 test = [
   "anyio>=4.4.0",
   "covdefaults>=2.2.2",
-  "pytest>=7.2",
+  "pytest>=8.0",
   "coverage>=7.0.5",
   "flaky>=3.7",
   "pytest-xdist>=3.1",
