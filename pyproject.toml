@@ -52,7 +52,7 @@ docs = [
   "towncrier>=22.12",
 ]
 lint = [
-  "black==24.8.0",
+  "black==26.3.1",
   "ruff==0.12.7",
   "isort==5.13.2",
   "mypy==1.14.1",
