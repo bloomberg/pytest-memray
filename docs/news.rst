@@ -5,6 +5,18 @@ Release History
 
 .. towncrier release notes start
 
+v1.9.0 (2026-07-01)
+-------------------
+
+Features - 1.9.0
+~~~~~~~~~~~~~~~~
+- For Python 3.13+, add support for failing a test if any objects created by that test survive past the test body finishing (via :func:`pytest.mark.limit_leaked_objects`). Expected leaks can be filtered out and ignored. (:issue:`153`)
+- Control how much detail the ``limit_memory`` marker shows on failure via pytest's ``-v`` / ``-q`` flags or the ``verbosity_memray`` ini option. At the default level or ``-v`` the top 10 allocations by size are shown; ``-vv`` lists every allocation; ``-q`` hides the allocation list entirely, leaving only the one-line failure summary. (:issue:`142`)
+
+Deprecations and Removals - 1.9.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Drop support for pytest 7.x, which was superseded in January 2024. (:issue:`142`)
+
 v1.8.0 (2025-08-13)
 -------------------
 
@@ -15,8 +27,9 @@ Features - 1.8.0
 v1.7.0 (2024-07-25)
 -------------------
 
-No significant changes.
-
+Bug Fixes - 1.7.0
+~~~~~~~~~~~~~~~~~
+- Fix compatibility with ``anyio``-based async test runners by using an ``async def`` wrapper when the decorated test is a coroutine function. (:issue:`119`)
 
 v1.6.0 (2024-04-18)
 -------------------

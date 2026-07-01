@@ -1,1 +1,0 @@
-Control how much detail the ``limit_memory`` marker shows on failure via pytest's ``-v`` / ``-q`` flags or the ``verbosity_memray`` ini option. At the default level or ``-v`` the top 10 allocations by size are shown; ``-vv`` lists every allocation; ``-q`` hides the allocation list entirely, leaving only the one-line failure summary.
