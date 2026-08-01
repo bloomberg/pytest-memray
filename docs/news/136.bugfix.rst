@@ -1,0 +1,1 @@
+Truncate binary dump file names that exceed the file system limit, so tests with long node ids (deeply nested paths or verbose parametrization) no longer fail with ``OSError: File name too long``.
