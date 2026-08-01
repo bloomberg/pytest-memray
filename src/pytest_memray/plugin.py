@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections
 import functools
 import gc
+import hashlib
 import inspect
 import math
 import os
@@ -71,6 +72,26 @@ MARKERS = {
 
 N_TOP_ALLOCS = 5
 N_HISTOGRAM_BINS = 5
+# Most file systems cap a single path component at 255 bytes. The sibling
+# metadata file replaces the ".bin" suffix with the longer ".metadata" one, so
+# leave room for that too.
+MAX_FILENAME_LENGTH = 255 - (len(".metadata") - len(".bin"))
+
+
+def _truncate_filename(name: str, max_length: int = MAX_FILENAME_LENGTH) -> str:
+    """Shorten *name* so it fits in a single path component.
+
+    Long test ids -- from deeply nested test paths or verbose parametrization --
+    can produce names the file system rejects. The tail is replaced with a
+    digest of the full name so truncated names stay unique.
+    """
+    encoded = name.encode("utf-8")
+    if len(encoded) <= max_length:
+        return name
+    digest = hashlib.sha256(encoded).hexdigest()[:16]
+    suffix = f"-{digest}.bin"
+    keep = max_length - len(suffix)
+    return encoded[:keep].decode("utf-8", "ignore") + suffix
 
 
 def histogram(
@@ -185,7 +206,7 @@ class Manager:
             if self._tmp_dir is None and not os.getenv("MEMRAY_RESULT_PATH"):
                 of_id = pyfuncitem.nodeid.replace("::", "-")
                 of_id = of_id.replace(os.sep, "-")
-                name = f"{self._bin_prefix}-{of_id}.bin"
+                name = _truncate_filename(f"{self._bin_prefix}-{of_id}.bin")
             else:
                 name = f"{uuid.uuid4().hex}.bin"
             result_file = self.result_path / name

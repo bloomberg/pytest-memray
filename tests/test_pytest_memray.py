@@ -594,6 +594,84 @@ def test_bin_path(pytester: Pytester) -> None:
     assert f"Created 3 binary dumps at {dump} with prefix H" in output
 
 
+def test_bin_path_with_long_test_id(
+    pytester: Pytester, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("MEMRAY_RESULT_PATH", raising=False)
+    py = """
+    import pytest
+
+    @pytest.mark.parametrize('v', ['a' * 300])
+    def test_a(v):
+        assert [1]
+    """
+    pytester.makepyfile(**{"test_a": py})
+    dump = pytester.path / "d"
+    result = pytester.runpytest_subprocess(
+        "--memray",
+        "--memray-bin-path",
+        str(dump),
+        "--memray-bin-prefix",
+        "352f3f34aa644bc2b3672ef467430223",
+    )
+
+    assert result.ret == ExitCode.OK
+
+    expected_stem = (
+        "352f3f34aa644bc2b3672ef467430223"
+        + "-test_a.py-test_a["
+        + ("a" * 179)
+        + "-88c716620b48351a"
+    )
+
+    dumps = [i.name for i in dump.iterdir() if i.name != "metadata"]
+    assert len(dumps) == 1
+    assert dumps[0] == f"{expected_stem}.bin"
+    metadata = list((dump / "metadata").iterdir())
+    assert len(metadata) == 1
+    assert metadata[0].name == f"{expected_stem}.metadata"
+    assert len(metadata[0].name.encode("utf-8")) == 255
+
+
+def test_bin_path_with_long_test_id_and_long_prefix(
+    pytester: Pytester, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("MEMRAY_RESULT_PATH", raising=False)
+    py = """
+    import pytest
+
+    @pytest.mark.parametrize('v', ['a' * 300])
+    def test_a(v):
+        assert [1]
+    """
+    pytester.makepyfile(**{"test_a": py})
+    dump = pytester.path / "d"
+    result = pytester.runpytest_subprocess(
+        "--memray",
+        "--memray-bin-path",
+        str(dump),
+        "--memray-bin-prefix",
+        "352f3f34aa644bc2b3672ef467430223" * 3,
+    )
+
+    assert result.ret == ExitCode.OK
+
+    expected_stem = (
+        ("352f3f34aa644bc2b3672ef467430223" * 3)
+        + "-test_a.py-test_a["
+        + ("a" * 115)
+        + "-3e4fe15eabd37073"
+    )
+
+    dumps = [i.name for i in dump.iterdir() if i.name != "metadata"]
+    assert len(dumps) == 1
+    assert dumps[0] == f"{expected_stem}.bin"
+    metadata = list((dump / "metadata").iterdir())
+    assert len(metadata) == 1
+    assert metadata[0].name == f"{expected_stem}.metadata"
+    assert len(metadata[0].name.encode("utf-8")) == 255
+
+
 @pytest.mark.parametrize("override", [True, False])
 def test_bin_path_prefix(pytester: Pytester, override: bool) -> None:
     py = """
