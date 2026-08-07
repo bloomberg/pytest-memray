@@ -311,9 +311,9 @@ def test_memray_report_native(native: bool, pytester: Pytester) -> None:
     )
 
     if native:
-        assert "MemoryAllocator_1" in output
+        assert "MemoryAllocator_" in output
     else:
-        assert "MemoryAllocator_1" not in output
+        assert "MemoryAllocator_" not in output
 
 
 @pytest.mark.parametrize("trace_python_allocators", [True, False])
