@@ -45,6 +45,7 @@ memray = "pytest_memray.plugin"
 
 [dependency-groups]
 docs = [
+  "sphinx-llm>=0.4.1",
   "furo>=2022.12.7",
   "sphinx>=6.1.3",
   "sphinx-argparse>=0.4",

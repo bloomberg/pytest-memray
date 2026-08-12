@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 import sys
 from pathlib import Path
 from subprocess import check_output
@@ -10,6 +12,7 @@ from sphinx.application import Sphinx
 from sphinxcontrib.programoutput import Command
 
 extensions = [
+    "sphinx_llm.txt",
     "sphinx.ext.autodoc",
     "sphinx.ext.extlinks",
     "sphinx.ext.githubpages",
@@ -67,3 +70,6 @@ def setup(app: Sphinx) -> None:
     new = check_output(cmd, cwd=root, text=True)
     to = root / "docs" / "_draft.rst"
     to.write_text("" if "No significant changes" in new else new)
+
+
+markdown_http_base = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
