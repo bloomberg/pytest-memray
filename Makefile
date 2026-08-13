@@ -1,4 +1,6 @@
 PYTHON ?= python
+# The prek executable supports Python 3.8; its Python module launcher does not.
+PREK ?= prek
 PRETTIER ?= prettier --no-editorconfig
 
 # Doc generation variables
@@ -9,7 +11,6 @@ PKG_CONFIG_PATH ?= /opt/bb/lib64/pkgconfig
 PIP_INSTALL=PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(PYTHON) -m pip install
 
 markdown_files := $(shell find . -name \*.md -not -path '*/\.*')
-python_files := $(shell find . -name \*.py -not -path '*/\.*')
 PURELIB=$(shell $(PYTHON) -c 'import sysconfig; print(sysconfig.get_path("purelib"))')
 # Use this to inject arbitrary commands before the make targets (e.g. docker)
 ENV :=
@@ -40,13 +41,11 @@ coverage:  ## Run the test suite, with Python code coverage
 
 .PHONY: format
 format:  ## Autoformat all files
-	$(PYTHON) -m ruff --fix $(python_files)
-	$(PYTHON) -m black $(python_files)
+	$(PREK) run --all-files
 
 .PHONY: lint
 lint:  ## Lint all files
-	$(PYTHON) -m ruff check $(python_files)
-	$(PYTHON) -m black --check --diff $(python_files)
+	$(PREK) run --all-files
 	$(PYTHON) -m mypy src/pytest_memray
 
 .PHONY: docs
