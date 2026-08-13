@@ -180,6 +180,21 @@ pytest-memray runs wherever [Memray](https://github.com/bloomberg/memray) is sup
 (Linux and macOS). To set up a development environment on either platform, use tox (or
 the Make targets directly).
 
+Install the development dependencies and the prek (pre-commit) hooks:
+
+```shell
+tox -e dev
+source .tox/dev/bin/activate
+prek install
+```
+
+You can then run the lint checks and test suite with:
+
+```shell
+make lint
+make check
+```
+
 On other platforms you can run the test suite in Docker (you can parametrize tox by
 passing additional arguments at the end):
 
