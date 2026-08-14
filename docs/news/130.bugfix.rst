@@ -1,0 +1,1 @@
+Allow tests using the ``limit_memory`` marker to run when pytest's cacheprovider plugin is disabled.
