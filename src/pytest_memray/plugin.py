@@ -5,9 +5,9 @@ import functools
 import gc
 import hashlib
 import inspect
+import json
 import math
 import os
-import pickle
 import sys
 import uuid
 from contextlib import contextmanager
@@ -127,7 +127,7 @@ ResultElement = List[Tuple[object, int]]
 @dataclass
 class Result:
     test_id: str
-    metadata: Metadata
+    peak_memory: int
     result_file: Path
 
 
@@ -258,15 +258,23 @@ class Manager:
                 metadata = FileReader(result_file).metadata
             except OSError:
                 return
-            result = Result(pyfuncitem.nodeid, metadata, result_file)
+            result = Result(pyfuncitem.nodeid, metadata.peak_memory, result_file)
             metadata_path = (
                 self.result_metadata_path / result_file.with_suffix(".metadata").name
             )
-            with open(metadata_path, "wb") as file_handler:
-                pickle.dump(result, file_handler)
+
+            with open(metadata_path, "w", encoding="utf-8") as file_handler:
+                json.dump(
+                    {
+                        "test_id": result.test_id,
+                        "peak_memory": result.peak_memory,
+                        "result_file": str(result.result_file),
+                    },
+                    file_handler,
+                )
             self.results[pyfuncitem.nodeid] = result
 
-            # Store surviving objects separately (they can't be pickled)
+            # Store surviving objects separately (they can't be serialized)
             if surviving_objects is not None:  # pragma: no cover
                 self.surviving_objects[pyfuncitem.nodeid] = surviving_objects
 
@@ -377,12 +385,14 @@ class Manager:
             # this case, we can retrieve the results from the metadata directory
             # instead, that is common for all workers.
             for result_file in self.result_metadata_path.glob("*.metadata"):
-                result = pickle.loads(result_file.read_bytes())
+                raw = json.loads(result_file.read_bytes())
+                raw["result_file"] = Path(raw["result_file"])
+                result = Result(**raw)
                 self.results[result.test_id] = result
 
         total_sizes = collections.Counter(
             {
-                node_id: result.metadata.peak_memory
+                node_id: result.peak_memory
                 for node_id, result in self.results.items()
                 if result.result_file.exists()
             }
