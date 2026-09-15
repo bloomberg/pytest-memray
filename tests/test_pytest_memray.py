@@ -123,6 +123,22 @@ def test_limit_memory_marker_does_work_if_memray_not_passed(
     assert result.ret == ExitCode.TESTS_FAILED
 
 
+def test_limit_memory_marker_without_cacheprovider(pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+
+        @pytest.mark.limit_memory("1MB")
+        def test_memory_allocation():
+            pass
+        """
+    )
+
+    result = pytester.runpytest("--memray", "-p", "no:cacheprovider")
+
+    assert result.ret == ExitCode.OK
+
+
 @pytest.mark.parametrize(
     "memlimit, mem_to_alloc",
     [(5, 100), (10, 200)],

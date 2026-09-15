@@ -234,15 +234,16 @@ def limit_memory(
     max_memory = parse_memory_string(limit)
     total_allocated_memory = sum(record.size for record in allocations)
 
-    if _config.cache is not None:
-        cache = _config.cache.get(f"memray/{_test_id}", {})
+    cache_provider = getattr(_config, "cache", None)
+    if cache_provider is not None:
+        cache = cache_provider.get(f"memray/{_test_id}", {})
         previous = cache.get("total_allocated_memory", float("inf"))
         fail_on_increase = cast(bool, value_or_ini(_config, "fail_on_increase"))
         if fail_on_increase and total_allocated_memory > previous:
             return _MoreMemoryInfo(previous, total_allocated_memory)
 
         cache["total_allocated_memory"] = total_allocated_memory
-        _config.cache.set(f"memray/{_test_id}", cache)
+        cache_provider.set(f"memray/{_test_id}", cache)
 
     if total_allocated_memory < max_memory:
         return None
