@@ -5,6 +5,15 @@ Release History
 
 .. towncrier release notes start
 
+v1.11.0 (2026-09-16)
+--------------------
+
+Bug Fixes - 1.11.0
+~~~~~~~~~~~~~~~~~~
+- Allow tests using the ``limit_memory`` marker to run when pytest's cacheprovider plugin is disabled. (:issue:`130`)
+- Write metadata files to the configured ``--memray-bin-directory`` as JSON rather than pickle files. (:issue:`195`)
+- Rename metadata files written to the ``--memray-bin-directory`` into place atomically. (:issue:`196`)
+
 v1.10.0 (2026-08-07)
 --------------------
 
