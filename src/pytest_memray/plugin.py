@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from itertools import islice
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from tempfile import TemporaryDirectory
 from typing import Any
 from typing import Generator
@@ -259,19 +260,24 @@ class Manager:
             except OSError:
                 return
             result = Result(pyfuncitem.nodeid, metadata.peak_memory, result_file)
-            metadata_path = (
-                self.result_metadata_path / result_file.with_suffix(".metadata").name
-            )
 
-            with open(metadata_path, "w", encoding="utf-8") as file_handler:
-                json.dump(
-                    {
-                        "test_id": result.test_id,
-                        "peak_memory": result.peak_memory,
-                        "result_file": str(result.result_file),
-                    },
-                    file_handler,
+            with NamedTemporaryFile(
+                dir=self.result_metadata_path,
+                delete=False,
+            ) as tmp_file:
+                tmp_file.write(
+                    json.dumps(
+                        {
+                            "test_id": result.test_id,
+                            "peak_memory": result.peak_memory,
+                            "result_file": str(result.result_file),
+                        }
+                    ).encode("utf-8")
                 )
+
+            metadata_filename = result_file.with_suffix(".metadata").name
+            os.replace(tmp_file.name, self.result_metadata_path / metadata_filename)
+
             self.results[pyfuncitem.nodeid] = result
 
             # Store surviving objects separately (they can't be serialized)
