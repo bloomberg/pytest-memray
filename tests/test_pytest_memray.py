@@ -1124,3 +1124,119 @@ def test_running_async_tests_with_anyio(pytester: Pytester) -> None:
             "Test was allowed to leak 5.0KiB per location"
             " but at least one location leaked more"
         )
+
+
+def test_memray_from_ini(pytester: Pytester) -> None:
+    pytester.makeini(
+        """
+        [pytest]
+        memray = true
+        """
+    )
+    pytester.makepyfile(
+        """
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        def test_foo():
+            allocator.valloc(1024)
+            allocator.free()
+        """
+    )
+
+    result = pytester.runpytest()
+
+    assert result.ret == ExitCode.OK
+    assert "MEMRAY REPORT" in result.stdout.str()
+
+
+def test_hide_memray_summary_from_ini(pytester: Pytester) -> None:
+    pytester.makeini(
+        """
+        [pytest]
+        hide_memray_summary = true
+        """
+    )
+    pytester.makepyfile(
+        """
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        def test_foo():
+            allocator.valloc(1024)
+            allocator.free()
+        """
+    )
+
+    result = pytester.runpytest("--memray")
+
+    assert result.ret == ExitCode.OK
+    assert "MEMRAY REPORT" not in result.stdout.str()
+
+
+def test_most_allocations_from_ini(pytester: Pytester) -> None:
+    pytester.makeini(
+        """
+        [pytest]
+        most_allocations = 1
+        """
+    )
+    pytester.makepyfile(
+        """
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        def test_foo():
+            allocator.valloc(1024*1024)
+            allocator.free()
+
+        def test_bar():
+            allocator.valloc(1024*1024*2)
+            allocator.free()
+        """
+    )
+
+    result = pytester.runpytest("--memray")
+
+    assert result.ret == ExitCode.OK
+    output = result.stdout.str()
+    assert "results for test_most_allocations_from_ini.py::test_foo" not in output
+    assert "results for test_most_allocations_from_ini.py::test_bar" in output
+
+
+def test_fail_on_increase_from_ini(pytester: Pytester) -> None:
+    pytester.makeini(
+        """
+        [pytest]
+        fail-on-increase = true
+        """
+    )
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        @pytest.mark.limit_memory("100MB")
+        def test_memory_alloc_fails():
+            allocator.valloc(1024)
+            allocator.free()
+        """
+    )
+    result = pytester.runpytest("--memray")
+    assert result.ret == ExitCode.OK
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        @pytest.mark.limit_memory("100MB")
+        def test_memory_alloc_fails():
+            allocator.valloc(1024 * 10)
+            allocator.free()
+        """
+    )
+    result = pytester.runpytest("--memray")
+    assert result.ret == ExitCode.TESTS_FAILED
+    assert "Test uses more memory than previous run" in result.stdout.str()
