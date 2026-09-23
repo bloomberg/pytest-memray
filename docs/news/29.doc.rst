@@ -1,0 +1,1 @@
+Document that pytest's log capturing counts toward the memory a test allocates, and how to turn it off.
