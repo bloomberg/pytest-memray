@@ -60,6 +60,10 @@ def test_parse_memory_string(the_str: str, expected: float) -> None:
         "-100 B",
         "-100.0 B",
         "+100.0 K",
+        "100KBextra",
+        "1MB2GB",
+        "100B/s",
+        "1MB\n2GB",
     ],
 )
 def test_parse_incorrect_memory_string(the_str: str) -> None:
