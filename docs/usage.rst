@@ -58,6 +58,13 @@ that can be used to enforce additional checks and validations on tests.
         that memory is not immediately released to the system when objects are deleted,
         so tests using this marker may need to give some room to account for this.
 
+    .. note::
+
+        pytest keeps every log record a test emits, so that it can show them if the
+        test fails, and that memory counts toward the limit: a test that logs 20,000
+        short messages allocates more than 10 MiB. Pass ``-p no:logging`` to pytest
+        to turn its log capturing off.
+
     Example of usage:
 
     .. code-block:: python
