@@ -41,6 +41,7 @@ from pytest_memray.plugin import cli_hist
         ("+100.0b", 100),
         ("+100.0   b", 100),
         ("+100 Kb", 100 * 1024),
+        ("100MB ", 100 * 1024**2),
     ],
 )
 def test_parse_memory_string(the_str: str, expected: float) -> None:
@@ -60,6 +61,10 @@ def test_parse_memory_string(the_str: str, expected: float) -> None:
         "-100 B",
         "-100.0 B",
         "+100.0 K",
+        "1MB2GB",
+        "100B/s",
+        "100MB extra",
+        "100MB100",
     ],
 )
 def test_parse_incorrect_memory_string(the_str: str) -> None:
