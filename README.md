@@ -103,7 +103,7 @@ MEMORY PROBLEMS demo/test_ok.py::test_memory_exceed
 ## Configuration - INI
 
 - `memray(bool)` - activate memray tracking
-- `most-allocations(string)` - show the N tests that allocate most memory (N=0 for all)
+- `most_allocations(int)` - show the N tests that allocate most memory (N=0 for all)
 - `hide_memray_summary(bool)` - hide the memray summary at the end of the execution
 - `stacks(int)` - Show the N stack entries when showing tracebacks of memory allocations
 - `native(bool)`- Show native frames when showing tracebacks of memory allocations (will be slower)

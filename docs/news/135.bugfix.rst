@@ -1,0 +1,1 @@
+Read ``memray``, ``hide_memray_summary``, ``native``, ``trace_python_allocators``, ``most_allocations``, ``stacks`` and ``fail-on-increase`` from the pytest configuration file when the matching command line option is not given.
