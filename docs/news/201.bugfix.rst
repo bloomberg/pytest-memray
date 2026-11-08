@@ -1,0 +1,1 @@
+Reject memory limit strings with trailing garbage such as ``1MB2GB`` or ``100B/s`` instead of silently parsing the valid prefix, so a malformed ``limit_memory`` marker raises ``ValueError`` as intended.
