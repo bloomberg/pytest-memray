@@ -4,11 +4,8 @@
 - Operating system: Kali Linux
 - Python: 3.12.7
 - Project: pytest-memray
-- Tests:
-  - test_bin_path_with_long_test_id
-  - test_bin_path_with_long_test_id_and_long_prefix
 
-## Results
+## Initial Tests (Before Fix)
 
 | pytest | Memray | Result |
 |---|---|---|
@@ -17,17 +14,33 @@
 | 9.2.0 | 1.19.1 | FAIL (2 tests) |
 | 9.2.0 | 1.20.0 | FAIL (2 tests) |
 
-## Observation
+## Root Cause
 
-Both tests pass with pytest 8.0.0 and fail with pytest 9.2.0
-in the tested environment. Changing Memray between 1.19.1
-and 1.20.0 did not change the result.
+Pytest 9.2.0 generated a shortened parameter ID for the 300-character string used in the tests. The tests expected the long parameter ID to be retained when generating binary filenames.
 
-The failing assertions concern generated binary filenames.
-The nested test executions themselves pass.
+## Fix
 
-## Limitation
+Both test cases were updated to specify the parameter ID explicitly:
 
-These results cover two tests on Python 3.12.7 only.
-They do not establish compatibility across all supported
-Python, pytest, or Memray versions.
+`@pytest.mark.parametrize('v', ['a' * 300], ids=['a' * 300])`
+
+This makes the intended long parameter ID deterministic.
+
+## Post-Fix Verification
+
+| pytest | Memray | Result |
+|---|---|---|
+| 8.0.0 | 1.20.0 | PASS (2 tests) |
+| 9.2.0 | 1.20.0 | PASS (2 tests) |
+
+Full test suite using pytest 9.2.0 and Memray 1.20.0:
+
+- 99 passed
+- 6 skipped
+- 0 failed
+
+The six skipped tests require Python 3.13.3 or later.
+
+## Limitations
+
+Testing was performed on Python 3.12.7 only. These results do not establish compatibility across all supported Python, pytest, or Memray versions.
