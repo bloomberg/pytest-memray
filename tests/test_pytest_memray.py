@@ -617,7 +617,7 @@ def test_bin_path_with_long_test_id(
     py = """
     import pytest
 
-    @pytest.mark.parametrize('v', ['a' * 300])
+    @pytest.mark.parametrize('v', ['a' * 300], ids=['a' * 300])
     def test_a(v):
         assert [1]
     """
@@ -656,7 +656,7 @@ def test_bin_path_with_long_test_id_and_long_prefix(
     py = """
     import pytest
 
-    @pytest.mark.parametrize('v', ['a' * 300])
+    @pytest.mark.parametrize('v', ['a' * 300], ids=['a' * 300])
     def test_a(v):
         assert [1]
     """
