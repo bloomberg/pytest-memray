@@ -39,7 +39,7 @@ UNIT_TO_MULTIPLIER = {
 
 
 def parse_memory_string(mem_str: str) -> float:
-    match = UNIT_REGEXP.match(mem_str)
+    match = UNIT_REGEXP.fullmatch(mem_str)
     if not match:
         raise ValueError(f"Invalid memory size format: {mem_str}")
     quantity, unit = match.groups()
