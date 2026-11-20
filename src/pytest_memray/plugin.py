@@ -404,7 +404,7 @@ class Manager:
             }
         )
 
-        max_results = cast(int, value_or_ini(self.config, "most_allocations"))
+        max_results = int(cast(str, value_or_ini(self.config, "most_allocations")))
         if max_results == 0:
             max_results = len(total_sizes)
 
@@ -461,7 +461,7 @@ def pytest_addoption(parser: Parser) -> None:
     group.addoption(
         "--memray",
         action="store_true",
-        default=False,
+        default=None,
         help="Activate memray tracking",
     )
     group.addoption(
@@ -478,38 +478,38 @@ def pytest_addoption(parser: Parser) -> None:
     group.addoption(
         "--hide-memray-summary",
         action="store_true",
-        default=False,
+        default=None,
         help="Hide the memray summary at the end of the execution",
     )
     group.addoption(
         "--most-allocations",
         type=int,
-        default=5,
+        default=None,
         help="Show the N tests that allocate most memory (N=0 for all)",
     )
     group.addoption(
         "--stacks",
         type=positive_int,
-        default=1,
+        default=None,
         help="Show the N stack entries when showing tracebacks of memory allocations",
     )
     group.addoption(
         "--native",
         action="store_true",
-        default=False,
+        default=None,
         help="Show native frames when showing tracebacks of memory allocations "
         "(will be slower)",
     )
     group.addoption(
         "--trace-python-allocators",
         action="store_true",
-        default=False,
+        default=None,
         help="Record allocations made by the Pymalloc allocator (will be slower)",
     )
     group.addoption(
         "--fail-on-increase",
         action="store_true",
-        default=False,
+        default=None,
         help="Fail a test with the limit_memory marker if it uses more memory than its last successful run",
     )
 
@@ -523,6 +523,7 @@ def pytest_addoption(parser: Parser) -> None:
         "stacks",
         help="Show the N stack entries when showing tracebacks of memory allocations",
         type="string",
+        default="1",
     )
     parser.addini(
         "native",
@@ -552,7 +553,7 @@ def pytest_addoption(parser: Parser) -> None:
         default="auto",
     )
     help_msg = "Show the N tests that allocate most memory (N=0 for all)"
-    parser.addini("most_allocations", help_msg)
+    parser.addini("most_allocations", help_msg, default="5")
 
 
 def pytest_configure(config: Config) -> None:

@@ -238,7 +238,10 @@ def limit_memory(
     if cache_provider is not None:
         cache = cache_provider.get(f"memray/{_test_id}", {})
         previous = cache.get("total_allocated_memory", float("inf"))
-        fail_on_increase = cast(bool, value_or_ini(_config, "fail_on_increase"))
+        # the ini key is spelled with hyphens, unlike the option's dest
+        fail_on_increase = bool(
+            _config.getvalue("fail_on_increase") or _config.getini("fail-on-increase")
+        )
         if fail_on_increase and total_allocated_memory > previous:
             return _MoreMemoryInfo(previous, total_allocated_memory)
 
@@ -247,7 +250,7 @@ def limit_memory(
 
     if total_allocated_memory < max_memory:
         return None
-    num_stacks: int = cast(int, value_or_ini(_config, "stacks"))
+    num_stacks: int = int(cast(str, value_or_ini(_config, "stacks")))
     native_stacks: bool = cast(bool, value_or_ini(_config, "native"))
     return _MemoryInfo(
         max_memory=max_memory,
@@ -291,7 +294,7 @@ def limit_leaks(
     if not leaked_allocations:
         return None
 
-    num_stacks: int = max(cast(int, value_or_ini(_config, "stacks")), 5)
+    num_stacks: int = max(int(cast(str, value_or_ini(_config, "stacks"))), 5)
     return _LeakedInfo(
         max_memory=memory_limit,
         allocations=leaked_allocations,
