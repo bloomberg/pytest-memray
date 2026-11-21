@@ -28,6 +28,28 @@ reported after tests run ends:
 .. command-output:: env COLUMNS=92 pytest --memray demo
    :returncode: 1
 
+Aggregated summary
+~~~~~~~~~~~~~~~~~~
+
+Alongside the per-test reports, the summary starts with aggregate figures for
+every tracked test:
+
+.. code-block:: text
+
+   Aggregated results for 2 tests
+
+   	 📦 Total memory used across tests: 3.0KiB
+   	 🔺 Peak memory usage: 2.0KiB (test_mod.py::test_foo)
+
+"Total memory used across tests" is the sum of each test's peak memory, as
+measured by memray at that test's high watermark. "Peak memory usage" is the
+largest peak belonging to a single test, together with its test id. Both cover
+all tracked tests, even when ``--most-allocations`` limits the number of
+per-test reports, and both work with ``pytest-xdist``.
+
+These figures come from memray's per-test measurements: they are not the process
+resident set size and are not a simultaneous peak across parallel workers.
+
 Markers
 ~~~~~~~
 

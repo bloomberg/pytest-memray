@@ -1,0 +1,1 @@
+Report the total memory used across all tracked tests and the peak single-test memory in the memray summary, including under pytest-xdist. (:issue:`143`)

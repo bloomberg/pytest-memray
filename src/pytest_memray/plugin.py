@@ -408,6 +408,9 @@ class Manager:
         if max_results == 0:
             max_results = len(total_sizes)
 
+        if total_sizes:
+            self._write_aggregate_summary(total_sizes, terminalreporter)
+
         for test_id, total_size in total_sizes.most_common(max_results):
             result = self.results[test_id]
             reader = FileReader(result.result_file)
@@ -425,6 +428,23 @@ class Manager:
             msg = f"Created {len(total_sizes)} binary dumps at {self.result_path}"
             msg += f" with prefix {self._bin_prefix}"
             terminalreporter.write_line(msg)
+
+    @staticmethod
+    def _write_aggregate_summary(
+        total_sizes: collections.Counter[str],
+        terminalreporter: TerminalReporter,
+    ) -> None:
+        total = sum(total_sizes.values())
+        peak_test_id, peak = max(
+            total_sizes.items(), key=lambda item: (item[1], item[0])
+        )
+        plural = "" if len(total_sizes) == 1 else "s"
+        writeln = terminalreporter.write_line
+        writeln(f"Aggregated results for {len(total_sizes)} test{plural}")
+        writeln("")
+        writeln(f"\t 📦 Total memory used across tests: {sizeof_fmt(total)}")
+        writeln(f"\t 🔺 Peak memory usage: {sizeof_fmt(peak)} ({peak_test_id})")
+        writeln("")
 
     @staticmethod
     def _report_records_for_test(
