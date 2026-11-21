@@ -11,7 +11,8 @@ The complete list of command line options is:
     Activate memray tracking.
 
   ``--most-allocations=MOST_ALLOCATIONS``
-    Show the N tests that allocate most memory (N=0 for all).
+    Show the N tests that allocate most memory (N=0 for all). This limits only
+    the per-test reports; the aggregated summary always covers every tracked test.
 
   ``--hide-memray-summary``
     Hide the memray summary at the end of the execution.

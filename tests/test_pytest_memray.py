@@ -419,6 +419,10 @@ def test_memray_report(pytester: Pytester) -> None:
     assert "valloc:" in output
     assert "-> 1.0KiB" in output
 
+    assert "Aggregated results for 2 tests" in output
+    assert "Total memory used across tests: 3.0KiB" in output
+    assert "Peak memory usage: 2.0KiB (test_memray_report.py::test_bar)" in output
+
 
 def test_memray_report_is_not_shown_if_deactivated(pytester: Pytester) -> None:
     pytester.makepyfile(
@@ -450,6 +454,7 @@ def test_memray_report_is_not_shown_if_deactivated(pytester: Pytester) -> None:
     output = result.stdout.str()
 
     assert "MEMRAY REPORT" not in output
+    assert "Aggregated results for" not in output
 
     assert "results for test_memray_report.py::test_foo" not in output
     assert "Total memory allocated: 2.0KiB" not in output
@@ -493,6 +498,67 @@ def test_memray_report_limit(pytester: Pytester) -> None:
 
     assert "results for test_memray_report_limit.py::test_foo" not in output
     assert "results for test_memray_report_limit.py::test_bar" in output
+
+
+def test_aggregate_summary_not_limited_by_most_allocations(
+    pytester: Pytester,
+) -> None:
+    pytester.makepyfile(
+        """
+        import pytest
+        from memray._test import MemoryAllocator
+        allocator = MemoryAllocator()
+
+        def allocating_func1():
+            allocator.valloc(1024)
+            allocator.free()
+
+        def allocating_func2():
+            allocator.valloc(1024*2)
+            allocator.free()
+
+        def test_foo():
+            allocating_func1()
+
+        def test_bar():
+            allocating_func2()
+    """
+    )
+
+    result = pytester.runpytest("--memray", "--most-allocations=1")
+
+    assert result.ret == ExitCode.OK
+
+    output = result.stdout.str()
+
+    assert "Aggregated results for 2 tests" in output
+    assert (
+        "Peak memory usage: 2.0KiB "
+        "(test_aggregate_summary_not_limited_by_most_allocations.py::test_bar)"
+        in output
+    )
+    assert (
+        "results for "
+        "test_aggregate_summary_not_limited_by_most_allocations.py::test_foo"
+        not in output
+    )
+
+
+def test_aggregate_summary_singular(pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        def test_foo():
+            pass
+    """
+    )
+
+    result = pytester.runpytest("--memray")
+
+    assert result.ret == ExitCode.OK
+
+    output = result.stdout.str()
+
+    assert "Aggregated results for 1 test\n" in output
 
 
 def test_memray_report_limit_without_limit(pytester: Pytester) -> None:
@@ -777,6 +843,9 @@ def test_memray_report_with_pytest_xdist(pytester: Pytester) -> None:
     assert "results for test_memray_report_with_pytest_xdist.py::test_bar" in output
     assert "valloc:" in output
     assert "-> 1.0KiB" in output
+
+    assert "Aggregated results for 2 tests" in output
+    assert "Peak memory usage:" in output
 
 
 @pytest.mark.parametrize(

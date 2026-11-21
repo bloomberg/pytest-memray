@@ -57,6 +57,11 @@ List of allocations:
 	- <listcomp>:/w/demo/test_ok.py:17 -> 117.2KiB
 
 ====================================== MEMRAY REPORT =======================================
+Aggregated results for 2 tests
+
+	 📦 Total memory used across tests: 172.1KiB
+	 🔺 Peak memory usage: 117.2KiB (demo/test_ok.py::test_memory_exceed)
+
 Allocations results for demo/test_ok.py::test_memory_exceed
 
 	 📦 Total memory allocated: 117.2KiB
